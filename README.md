@@ -1,2 +1,0 @@
-# globetotter
-Created with CodeSandbox
