@@ -25,11 +25,15 @@ class SphereDraw extends HTMLElement {
   spheres = [];
   bigsphere = [];
 
+  OperationEnum = Object.freeze({ insert: 1, update: 2, delete: 3 });
+
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: "open" });
     this.shadow.appendChild(template.content.cloneNode(true));
     this.canvas = this.shadowRoot.querySelector("#c");
+
+    this.globeid = this.getAttribute("globeid");
   }
 
   connectedCallback() {
@@ -110,6 +114,20 @@ class SphereDraw extends HTMLElement {
     this.renderer.render(this.scene, this.camera);
   }
 
+  addGeometryActionToSphereSurface(geomAction) {
+    if (geomAction.action === "insert") {
+      let vec3 = geomAction.position;
+      let geometry = new THREE.SphereGeometry(10, 20, 20);
+      let material = new THREE.MeshStandardMaterial({
+        color: geomAction.color
+      });
+      let mesh = new THREE.Mesh(geometry, material);
+      mesh.userData = { uuid: geomAction.uuid };
+      mesh.position.copy(vec3);
+      this.scene.add(mesh);
+    }
+  }
+
   uuidv4() {
     return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
       (
@@ -131,28 +149,23 @@ class SphereDraw extends HTMLElement {
     if (this.intersects.length > 0) {
       this.INTERSECTED = this.intersects[0].object;
       if (this.INTERSECTED) {
-        let vec3 = this.intersects[0].point;
-        this.geometry = new THREE.SphereGeometry(10, 20, 20);
-        this.material = new THREE.MeshStandardMaterial({
-          color: this.COLORS[Math.floor(Math.random() * this.COLORS.length)]
-        });
-        this.mesh = new THREE.Mesh(this.geometry, this.material);
-        this.mesh.userData = { uuid: this.uuidv4() };
-        this.mesh.position.copy(vec3);
-        this.scene.add(this.mesh);
+        let geomAction = { actiontype: this.OperationEnum.insert };
+        const position = this.intersects[0].point;
+        const color = this.COLORS[
+          Math.floor(Math.random() * this.COLORS.length)
+        ];
+        geomAction.data = { position, color };
+        geomAction.uuid = this.uuidv4();
+        geomAction.globeid = this.globeid;
 
-        console.log("before gvteste123 event is sent");
+        this.addGeometryActionToSphereSurface(geomAction);
+        //console.log("before gvteste123 event is sent");
         //console.log(this.mesh.position);
         //console.log(JSON.stringify(this.mesh.position));
         this.dispatchEvent(
           new CustomEvent("SphereDrawAction", {
             bubbles: true,
-            detail: {
-              action: "insert",
-              uuid: this.mesh.userData.uuid,
-              position: JSON.stringify(vec3),
-              color: JSON.stringify(this.mesh.material.color)
-            }
+            detail: geomAction
           })
         );
         this.render();
