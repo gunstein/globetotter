@@ -32,8 +32,6 @@ class SphereDraw extends HTMLElement {
     this.shadow = this.attachShadow({ mode: "open" });
     this.shadow.appendChild(template.content.cloneNode(true));
     this.canvas = this.shadowRoot.querySelector("#c");
-
-    this.globeid = this.getAttribute("globeid");
   }
 
   connectedCallback() {
@@ -43,11 +41,14 @@ class SphereDraw extends HTMLElement {
     this.controls.addEventListener("change", this.render.bind(this));
 
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    this.globeid = this.getAttribute("globeid");
+    console.log("constructor globeid: ", this.globeid);
   }
 
   disconnectedCallback() {}
 
   init() {
+    console.log("SphereDrawThreejs init");
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -114,12 +115,33 @@ class SphereDraw extends HTMLElement {
     this.renderer.render(this.scene, this.camera);
   }
 
+  addGeometryActionToSphereSurfaceJSON(geomActionJSON) {
+    //NB!! Må legge inn sjekk på om object allerede eksisterer.
+    //Tror man får action med object som er satt inn lokalt to ganger.
+    console.log("addGeometryActionToSphereSurfaceJSON");
+    const geomAction = JSON.parse(geomActionJSON);
+
+    if (Array.isArray(geomAction)) {
+      console.log("isArray === true");
+      geomAction.forEach(singleaction => {
+        console.log("singleaction: ", singleaction);
+        this.addGeometryActionToSphereSurface(singleaction);
+      });
+    } else {
+      console.log("isArray === false");
+      this.addGeometryActionToSphereSurface(geomAction);
+    }
+  }
+
   addGeometryActionToSphereSurface(geomAction) {
-    if (geomAction.action === "insert") {
-      let vec3 = geomAction.position;
+    console.log("addGeometryActionToSphereSurface");
+    console.log(JSON.stringify(geomAction));
+    if (geomAction.actiontype === this.OperationEnum.insert) {
+      console.log("inserting");
+      let vec3 = geomAction.data.position;
       let geometry = new THREE.SphereGeometry(10, 20, 20);
       let material = new THREE.MeshStandardMaterial({
-        color: geomAction.color
+        color: geomAction.data.color
       });
       let mesh = new THREE.Mesh(geometry, material);
       mesh.userData = { uuid: geomAction.uuid };
@@ -163,9 +185,9 @@ class SphereDraw extends HTMLElement {
         //console.log(this.mesh.position);
         //console.log(JSON.stringify(this.mesh.position));
         this.dispatchEvent(
-          new CustomEvent("SphereDrawAction", {
+          new CustomEvent("onSphereDrawAction", {
             bubbles: true,
-            detail: geomAction
+            detail: JSON.stringify(geomAction)
           })
         );
         this.render();

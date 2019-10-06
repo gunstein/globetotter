@@ -1,15 +1,15 @@
 import gql from "graphql-tag";
 
-const globetotterSubscription = gql`
+const SUBSCRIBE_GLOBETOTTER_LOG = gql`
   subscription($globeid: Int!) {
     globetotter_log(
       where: { globe_id: { _eq: $globeid } }
-      order_by: { transaction_timestamp: desc }
+      order_by: { id: desc }
       limit: 1
     ) {
-      transaction_timestamp
+      id
     }
   }
 `;
 
-export default globetotterSubscription;
+export default SUBSCRIBE_GLOBETOTTER_LOG;
