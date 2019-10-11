@@ -6,6 +6,7 @@ const INSERT_GLOBETOTTER_LOG = gql`
     $data: jsonb!
     $objUuid: uuid!
     $operation: Int!
+    $transUuid: uuid!
   ) {
     insert_globetotter_log(
       objects: {
@@ -13,6 +14,7 @@ const INSERT_GLOBETOTTER_LOG = gql`
         object_data: $data
         object_uuid: $objUuid
         operation_id: $operation
+        transaction_uuid: $transUuid
       }
     ) {
       affected_rows

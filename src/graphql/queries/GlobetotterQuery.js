@@ -12,6 +12,7 @@ const QUERY_GLOBETOTTER_LOG = gql`
       transaction_timestamp
       id
       globe_id
+      transaction_uuid
     }
   }
 `;

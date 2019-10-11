@@ -1,31 +1,79 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useSubscription, useQuery, useMutation } from "@apollo/react-hooks";
 import SUBSCRIBE_GLOBETOTTER_LOG from "./graphql/subscriptions/GlobetotterSubscription";
 import INSERT_GLOBETOTTER_LOG from "./graphql/mutations/InsertGlobetotterLog";
 import QUERY_GLOBETOTTER_LOG from "./graphql/queries/GlobetotterQuery";
 import SphereDrawWrapper from "./SphereDrawWrapper";
+import Schema from "validate";
 
-const InsertGlobetotterLog = action => {
+const InsertGlobetotterLog = ({ action }) => {
   let [insertGlobetotterLog] = useMutation(INSERT_GLOBETOTTER_LOG);
 
-  useMemo(() => {
+  useEffect(() => {
     console.log("InsertGlobetotterLog useEffect action: ", action);
-    //if (Object.keys(action).length === 0) {
-    if (action.action === "") {
+
+    if (action === "") {
       return;
     }
 
-    const actionobj = JSON.parse(action.action);
-    //console.log("actionobj : ", actionobj);
+    const actionobj = JSON.parse(action);
 
-    insertGlobetotterLog({
-      variables: {
-        globeId: actionobj.globeid,
-        data: JSON.stringify(actionobj.data),
-        operation: actionobj.actiontype,
-        objUuid: actionobj.uuid
+    //Check if action is ok
+    const action_validator = new Schema({
+      globe_id: {
+        required: true,
+        type: Number
+      },
+      object_data: {
+        position: {
+          x: {
+            required: true
+          },
+          y: {
+            required: true
+          },
+          z: {
+            required: true
+          }
+        },
+        color: {
+          required: true,
+          type: Number
+        }
+      },
+      operation_id: {
+        required: true,
+        type: Number
+      },
+      object_uuid: {
+        required: true
+      },
+      transaction_uuid: {
+        required: true
       }
     });
+
+    const errors = action_validator.validate(actionobj);
+
+    console.log("actionobj.object_data", actionobj.object_data);
+    console.log(
+      "object_data stringify:",
+      JSON.stringify(actionobj.object_data)
+    );
+
+    if (errors.length === 0) {
+      insertGlobetotterLog({
+        variables: {
+          globeId: actionobj.globe_id,
+          data: JSON.stringify(actionobj.object_data),
+          operation: actionobj.operation_id,
+          objUuid: actionobj.object_uuid,
+          transUuid: actionobj.transaction_uuid
+        }
+      });
+    } else {
+      console.log("validation errors: ", errors);
+    }
   }, [action]);
 
   return null;
@@ -77,7 +125,8 @@ Eventer fra webcomponent (tror jeg) må merkes med globeid sånn at ikke alle gl
 const SingleGlobeHandler = ({ globeid }) => {
   console.log("SingleGlobeHandler globeid: ", globeid);
   //const [globeid, setGlobeid] = useState(globeid_param);
-  const [lastTransaction, setLastTransaction] = useState(0);
+  const [initialQueryHasRun, setInitialQueryHasRun] = useState(0); //Ensure query is ran before subscription start
+  const [lastTransactionReceived, setLastTransactionReceived] = useState(0);
   const [lastActionFromServer, setLastActionFromServer] = useState("");
   const [lastActionFromSphere, setLastActionFromSphere] = useState("");
 
@@ -85,9 +134,29 @@ const SingleGlobeHandler = ({ globeid }) => {
     //Call setLastActionFromServer
     console.log("handleQuery queryResult :", queryResult);
     console.log("queryResult length: ", queryResult.length);
+    if (initialQueryHasRun === 0) {
+      setInitialQueryHasRun(1);
+    }
     if (queryResult.length === 0) {
       return null;
     }
+
+    //go through action(s) and set lastTransactionReceived
+    let temptrans = 0;
+    if (Array.isArray(queryResult)) {
+      queryResult.forEach(singleaction => {
+        if (singleaction.id > temptrans) {
+          temptrans = singleaction.id;
+        }
+      });
+    } else if (queryResult.id > temptrans) {
+      temptrans = queryResult.id;
+    }
+
+    if (temptrans > lastTransactionReceived) {
+      setLastTransactionReceived(temptrans);
+    }
+
     setLastActionFromServer(JSON.stringify(queryResult));
   };
 
@@ -95,44 +164,38 @@ const SingleGlobeHandler = ({ globeid }) => {
     //Call setLastTransaction
     console.log("handleSubscription: ", lastTransQueryResult);
     if (lastTransQueryResult.globetotter_log.length !== 1) {
-      //Error. Hvordan bør dette håndteres?
+      //Empty globe, probably
       console.log(
         "handleSubscription lastTransQueryResult should have exactly one element."
       );
       return null;
     }
     const temptrans = lastTransQueryResult.globetotter_log[0].id;
-    console.log("temptrans: ", temptrans);
-    setLastTransaction(temptrans);
+    if (temptrans > lastTransactionReceived) {
+      setLastTransactionReceived(temptrans);
+    }
   };
 
   const handleSphereDrawAction = action => {
-    //Kjør mutation for å oppdatere hasura
+    //Run mutation to update Hasura
     console.log("handleSphereDrawAction : ", action);
     setLastActionFromSphere(action);
-    /*
-    console.log("handleSphereDrawAction");
-    console.log(action);
-    let tempAction = JSON.parse(action);
-    tempAction.data.position.x = tempAction.data.position.x + 4;
-    tempAction.data.position.y = tempAction.data.position.y + 4;
-
-    setLastAction(JSON.stringify(tempAction));
-    */
+    //setLastActionFromSphereCounter(lastActionFromSphereCounter + 1);
     return null;
   };
-  //return null;
-
+  //action_counter={lastActionFromSphereCounter}
   return (
     <div>
       <InsertGlobetotterLog action={lastActionFromSphere} />
-      <SubscribeToGlobeActions
-        globeidparam={globeid}
-        handleGlobeSubscription={handleSubscription}
-      />
+      {initialQueryHasRun ? (
+        <SubscribeToGlobeActions
+          globeidparam={globeid}
+          handleGlobeSubscription={handleSubscription}
+        />
+      ) : null}
       <GlobeQuery
         globeid={globeid}
-        lasttrans={lastTransaction}
+        lasttrans={lastTransactionReceived}
         handleGlobeQuery={handleQuery}
       />
       <SphereDrawWrapper

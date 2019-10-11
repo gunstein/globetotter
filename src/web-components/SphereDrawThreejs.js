@@ -120,33 +120,44 @@ class SphereDraw extends HTMLElement {
     //Tror man får action med object som er satt inn lokalt to ganger.
     console.log("addGeometryActionToSphereSurfaceJSON");
     const geomAction = JSON.parse(geomActionJSON);
+    console.log("geomAction", geomAction);
 
     if (Array.isArray(geomAction)) {
       console.log("isArray === true");
       geomAction.forEach(singleaction => {
         console.log("singleaction: ", singleaction);
+        singleaction.object_data = JSON.parse(singleaction.object_data);
         this.addGeometryActionToSphereSurface(singleaction);
       });
     } else {
       console.log("isArray === false");
+      geomAction.object_data = JSON.parse(geomAction.object_data);
       this.addGeometryActionToSphereSurface(geomAction);
     }
   }
 
   addGeometryActionToSphereSurface(geomAction) {
-    console.log("addGeometryActionToSphereSurface");
-    console.log(JSON.stringify(geomAction));
-    if (geomAction.actiontype === this.OperationEnum.insert) {
+    console.log("addGeometryActionToSphereSurface ", geomAction);
+    //console.log(JSON.stringify(geomAction));
+    if (geomAction.operation_id === this.OperationEnum.insert) {
       console.log("inserting");
-      let vec3 = geomAction.data.position;
+
+      const vec3 = new THREE.Vector3(
+        geomAction.object_data.position.x,
+        geomAction.object_data.position.y,
+        geomAction.object_data.position.z
+      );
+      //console.log("vec3", vec3);
       let geometry = new THREE.SphereGeometry(10, 20, 20);
       let material = new THREE.MeshStandardMaterial({
-        color: geomAction.data.color
+        color: geomAction.object_data.color
       });
       let mesh = new THREE.Mesh(geometry, material);
-      mesh.userData = { uuid: geomAction.uuid };
+      mesh.userData = { uuid: geomAction.object_uuid };
       mesh.position.copy(vec3);
+      //console.log("mesh:", mesh);
       this.scene.add(mesh);
+      this.render();
     }
   }
 
@@ -171,26 +182,24 @@ class SphereDraw extends HTMLElement {
     if (this.intersects.length > 0) {
       this.INTERSECTED = this.intersects[0].object;
       if (this.INTERSECTED) {
-        let geomAction = { actiontype: this.OperationEnum.insert };
+        let geomAction = { operation_id: this.OperationEnum.insert };
         const position = this.intersects[0].point;
         const color = this.COLORS[
           Math.floor(Math.random() * this.COLORS.length)
         ];
-        geomAction.data = { position, color };
-        geomAction.uuid = this.uuidv4();
-        geomAction.globeid = this.globeid;
+        geomAction.object_data = { position, color };
+        geomAction.object_uuid = this.uuidv4();
+        geomAction.transaction_uuid = this.uuidv4();
+        geomAction.globe_id = Number(this.globeid);
 
         this.addGeometryActionToSphereSurface(geomAction);
-        //console.log("before gvteste123 event is sent");
-        //console.log(this.mesh.position);
-        //console.log(JSON.stringify(this.mesh.position));
+        console.log("before dispatchevent");
         this.dispatchEvent(
           new CustomEvent("onSphereDrawAction", {
             bubbles: true,
             detail: JSON.stringify(geomAction)
           })
         );
-        this.render();
       }
     }
   }
