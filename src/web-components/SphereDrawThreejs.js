@@ -32,8 +32,6 @@ class SphereDraw extends HTMLElement {
     this.shadow = this.attachShadow({ mode: "open" });
     this.shadow.appendChild(template.content.cloneNode(true));
     this.canvas = this.shadowRoot.querySelector("#c");
-
-    this.globeid = this.getAttribute("globeid");
   }
 
   connectedCallback() {
@@ -43,11 +41,14 @@ class SphereDraw extends HTMLElement {
     this.controls.addEventListener("change", this.render.bind(this));
 
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    this.globeid = this.getAttribute("globeid");
+    console.log("constructor globeid: ", this.globeid);
   }
 
   disconnectedCallback() {}
 
   init() {
+    console.log("SphereDrawThreejs init");
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -114,17 +115,49 @@ class SphereDraw extends HTMLElement {
     this.renderer.render(this.scene, this.camera);
   }
 
+  addGeometryActionToSphereSurfaceJSON(geomActionJSON) {
+    //NB!! Må legge inn sjekk på om object allerede eksisterer.
+    //Tror man får action med object som er satt inn lokalt to ganger.
+    console.log("addGeometryActionToSphereSurfaceJSON");
+    const geomAction = JSON.parse(geomActionJSON);
+    console.log("geomAction", geomAction);
+
+    if (Array.isArray(geomAction)) {
+      console.log("isArray === true");
+      geomAction.forEach(singleaction => {
+        console.log("singleaction: ", singleaction);
+        singleaction.object_data = JSON.parse(singleaction.object_data);
+        this.addGeometryActionToSphereSurface(singleaction);
+      });
+    } else {
+      console.log("isArray === false");
+      geomAction.object_data = JSON.parse(geomAction.object_data);
+      this.addGeometryActionToSphereSurface(geomAction);
+    }
+  }
+
   addGeometryActionToSphereSurface(geomAction) {
-    if (geomAction.action === "insert") {
-      let vec3 = geomAction.position;
+    console.log("addGeometryActionToSphereSurface ", geomAction);
+    //console.log(JSON.stringify(geomAction));
+    if (geomAction.operation_id === this.OperationEnum.insert) {
+      console.log("inserting");
+
+      const vec3 = new THREE.Vector3(
+        geomAction.object_data.position.x,
+        geomAction.object_data.position.y,
+        geomAction.object_data.position.z
+      );
+      //console.log("vec3", vec3);
       let geometry = new THREE.SphereGeometry(10, 20, 20);
       let material = new THREE.MeshStandardMaterial({
-        color: geomAction.color
+        color: geomAction.object_data.color
       });
       let mesh = new THREE.Mesh(geometry, material);
-      mesh.userData = { uuid: geomAction.uuid };
+      mesh.userData = { uuid: geomAction.object_uuid };
       mesh.position.copy(vec3);
+      //console.log("mesh:", mesh);
       this.scene.add(mesh);
+      this.render();
     }
   }
 
@@ -149,26 +182,24 @@ class SphereDraw extends HTMLElement {
     if (this.intersects.length > 0) {
       this.INTERSECTED = this.intersects[0].object;
       if (this.INTERSECTED) {
-        let geomAction = { actiontype: this.OperationEnum.insert };
+        let geomAction = { operation_id: this.OperationEnum.insert };
         const position = this.intersects[0].point;
         const color = this.COLORS[
           Math.floor(Math.random() * this.COLORS.length)
         ];
-        geomAction.data = { position, color };
-        geomAction.uuid = this.uuidv4();
-        geomAction.globeid = this.globeid;
+        geomAction.object_data = { position, color };
+        geomAction.object_uuid = this.uuidv4();
+        geomAction.transaction_uuid = this.uuidv4();
+        geomAction.globe_id = Number(this.globeid);
 
         this.addGeometryActionToSphereSurface(geomAction);
-        //console.log("before gvteste123 event is sent");
-        //console.log(this.mesh.position);
-        //console.log(JSON.stringify(this.mesh.position));
+        console.log("before dispatchevent");
         this.dispatchEvent(
-          new CustomEvent("SphereDrawAction", {
+          new CustomEvent("onSphereDrawAction", {
             bubbles: true,
-            detail: geomAction
+            detail: JSON.stringify(geomAction)
           })
         );
-        this.render();
       }
     }
   }
