@@ -111,6 +111,16 @@ function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
 
   return null;
 }
+/*
+globetotter-huskelapp
+Lag wrapper rundt web-component
+Innfør state for current-action i SingleGlobe. Forhåpentligvis slipper man da alt sånn ref-styr.
+I SingleGlobe får vi tre states globeid, last_transaction, last_action.
+Vi får to handle funksjoner. handlesubscription og handlequery
+handlesubscription setter last_transaction-state. Det medfører at handlequery kalles siden denne lytter på last-transaction-state. handlequery setter last-action-state.
+last_actionstate-sendes til webcomp via state til wrapper.
+Eventer fra webcomponent (tror jeg) må merkes med globeid sånn at ikke alle glober legger til samme action.
+*/
 
 const SingleGlobeHandler = ({ globeid }) => {
   console.log("SingleGlobeHandler globeid: ", globeid);
