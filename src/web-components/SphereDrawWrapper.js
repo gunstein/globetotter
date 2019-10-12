@@ -1,5 +1,5 @@
 import React from "react";
-import "./web-components/SphereDrawThreejs";
+import "./SphereDrawThreejs";
 
 const SphereDrawWrapper = ({ globeid, lastaction, onSphereDrawAction }) => {
   //const ref = React.createRef();
