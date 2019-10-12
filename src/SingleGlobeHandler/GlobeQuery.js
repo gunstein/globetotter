@@ -5,7 +5,7 @@ import QUERY_GLOBETOTTER_LOG from "../graphql/queries/GlobetotterQuery";
 function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
   console.log("GlobeQuery globeid : ", globeid);
   console.log("GlobeQuery lasttrans : ", lasttrans);
-  const { loading, error, data, refetch } = useQuery(QUERY_GLOBETOTTER_LOG, {
+  const { loading, error, data } = useQuery(QUERY_GLOBETOTTER_LOG, {
     fetchPolicy: "no-cache",
     variables: { globeid: globeid, last_transaction: lasttrans }
   });
@@ -16,8 +16,8 @@ function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
   if (data && data.globetotter_log) {
     handleGlobeQuery(data.globetotter_log);
   }
-  //return null;
-  return <button onClick={() => refetch()}>Refetch!</button>;
+  return null;
+  //return <button onClick={() => refetch()}>Refetch!</button>;
 }
 
 export default GlobeQuery;
