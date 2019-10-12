@@ -116,7 +116,7 @@ class SphereDraw extends HTMLElement {
   }
 
   addGeometryActionToSphereSurfaceJSON(geomActionJSON) {
-    //NB!! Må legge inn sjekk på om object allerede eksisterer.
+    //NB!! Må legge inn sjekk på om transaksjon allerede eksisterer.
     //Tror man får action med object som er satt inn lokalt to ganger.
     console.log("addGeometryActionToSphereSurfaceJSON");
     const geomAction = JSON.parse(geomActionJSON);
@@ -127,12 +127,16 @@ class SphereDraw extends HTMLElement {
       geomAction.forEach(singleaction => {
         console.log("singleaction: ", singleaction);
         singleaction.object_data = JSON.parse(singleaction.object_data);
-        this.addGeometryActionToSphereSurface(singleaction);
+        if (this.spheres.indexOf(singleaction.transaction_uuid) === -1) {
+          this.addGeometryActionToSphereSurface(singleaction);
+        }
       });
     } else {
       console.log("isArray === false");
       geomAction.object_data = JSON.parse(geomAction.object_data);
-      this.addGeometryActionToSphereSurface(geomAction);
+      if (this.spheres.indexOf(geomAction.transaction_uuid) === -1) {
+        this.addGeometryActionToSphereSurface(geomAction);
+      }
     }
   }
 
@@ -157,6 +161,7 @@ class SphereDraw extends HTMLElement {
       mesh.position.copy(vec3);
       //console.log("mesh:", mesh);
       this.scene.add(mesh);
+      this.spheres.push(geomAction.transaction_uuid);
       this.render();
     }
   }
