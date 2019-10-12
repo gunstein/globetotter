@@ -126,7 +126,10 @@ const SingleGlobeHandler = ({ globeid }) => {
   console.log("SingleGlobeHandler globeid: ", globeid);
   //const [globeid, setGlobeid] = useState(globeid_param);
   const [initialQueryHasRun, setInitialQueryHasRun] = useState(0); //Ensure query is ran before subscription start
-  const [lastTransactionReceived, setLastTransactionReceived] = useState(0);
+
+  const [lastTransactionReceived, setLastTransactionReceived] = useState(0); //set vi handlequery
+  const [lastTransactionOnServer, setLastTransactionOnServer] = useState(0); //Set via subscription
+
   const [lastActionFromServer, setLastActionFromServer] = useState("");
   const [lastActionFromSphere, setLastActionFromSphere] = useState("");
 
@@ -171,8 +174,8 @@ const SingleGlobeHandler = ({ globeid }) => {
       return null;
     }
     const temptrans = lastTransQueryResult.globetotter_log[0].id;
-    if (temptrans > lastTransactionReceived) {
-      setLastTransactionReceived(temptrans);
+    if (temptrans > lastTransactionOnServer) {
+      setLastTransactionOnServer(temptrans);
     }
   };
 
