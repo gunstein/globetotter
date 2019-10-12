@@ -5,10 +5,12 @@ import SUBSCRIBE_GLOBETOTTER_LOG from "../graphql/subscriptions/GlobetotterSubsc
 const SubscribeToGlobeActions = ({ globeidparam, handleGlobeSubscription }) => {
   console.log("globeidparam", globeidparam);
   const { data, error, loading } = useSubscription(SUBSCRIBE_GLOBETOTTER_LOG, {
+    fetchPolicy: "no-cache",
     variables: { globeid: globeidparam }
   });
   if (loading) {
-    return <div>Loading...</div>;
+    //return <div>Loading...</div>;
+    return null;
   }
   if (error) {
     return <div>Error! {error.message}</div>;

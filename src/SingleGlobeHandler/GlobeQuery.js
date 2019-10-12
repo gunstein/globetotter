@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "@apollo/react-hooks";
 import QUERY_GLOBETOTTER_LOG from "../graphql/queries/GlobetotterQuery";
 
@@ -17,7 +16,6 @@ function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
     handleGlobeQuery(data.globetotter_log);
   }
   return null;
-  //return <button onClick={() => refetch()}>Refetch!</button>;
 }
 
 export default GlobeQuery;
