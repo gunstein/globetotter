@@ -7,7 +7,7 @@ import GlobeQuery from "./GlobeQuery";
 const SingleGlobeHandler = ({ globeid }) => {
   console.log("SingleGlobeHandler globeid: ", globeid);
   //const [globeid, setGlobeid] = useState(globeid_param);
-  const [initialQueryHasRun, setInitialQueryHasRun] = useState(0); //Ensure query is ran before subscription start
+  const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is ran before subscription start
 
   const [lastTransactionReceived, setLastTransactionReceived] = useState(0); //set vi handlequery
   const [lastTransactionOnServer, setLastTransactionOnServer] = useState(0); //Set via subscription
@@ -19,8 +19,8 @@ const SingleGlobeHandler = ({ globeid }) => {
     //Call setLastActionFromServer
     console.log("handleQuery queryResult :", queryResult);
     console.log("queryResult length: ", queryResult.length);
-    if (initialQueryHasRun === 0) {
-      setInitialQueryHasRun(1);
+    if (subscriptionMode === 0) {
+      setSubscriptonMode(1);
     }
     if (queryResult.length === 0) {
       return null;
@@ -57,6 +57,8 @@ const SingleGlobeHandler = ({ globeid }) => {
     }
     const temptrans = lastTransQueryResult.globetotter_log[0].id;
     if (temptrans > lastTransactionOnServer) {
+      console.log("calling setLastTransactionOnServer :", temptrans);
+      setSubscriptonMode(0);
       setLastTransactionOnServer(temptrans);
     }
   };
@@ -72,17 +74,19 @@ const SingleGlobeHandler = ({ globeid }) => {
   return (
     <div>
       <InsertGlobetotterLog action={lastActionFromSphere} />
-      {initialQueryHasRun ? (
+      {subscriptionMode ? (
         <SubscribeToGlobeActions
           globeidparam={globeid}
           handleGlobeSubscription={handleSubscription}
         />
       ) : null}
-      <GlobeQuery
-        globeid={globeid}
-        lasttrans={lastTransactionReceived}
-        handleGlobeQuery={handleQuery}
-      />
+      {!subscriptionMode ? (
+        <GlobeQuery
+          globeid={globeid}
+          lasttrans={lastTransactionReceived}
+          handleGlobeQuery={handleQuery}
+        />
+      ) : null}
       <SphereDrawWrapper
         globeid={globeid}
         lastaction={lastActionFromServer}

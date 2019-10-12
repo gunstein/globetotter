@@ -3,7 +3,10 @@ import gql from "graphql-tag";
 const QUERY_GLOBETOTTER_LOG = gql`
   query Globetotter_log($globeid: Int!, $last_transaction: Int!) {
     globetotter_log(
-      where: { globe_id: { _eq: $globeid }, id: { _gt: $last_transaction } }
+      where: {
+        globe_id: { _eq: $globeid }
+        _and: { id: { _gt: $last_transaction } }
+      }
       order_by: { id: asc }
     ) {
       operation_id

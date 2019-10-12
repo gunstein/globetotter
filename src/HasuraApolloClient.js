@@ -68,7 +68,20 @@ const link = split(
   wsLink,
   httpLink
 );
+/*
+const defaultOptions = {
+  watchQuery: {
+    fetchPolicy: "no-cache"
+  },
+  query: {
+    fetchPolicy: "no-cache"
+  }
+};
+*/
 const cache = new InMemoryCache();
-const client = new ApolloClient({ link, cache });
+const client = new ApolloClient({
+  link,
+  cache //, defaultOptions: defaultOptions
+});
 
 export default client;
