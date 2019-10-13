@@ -7,14 +7,10 @@ const InsertGlobetotterLog = ({ action }) => {
   let [insertGlobetotterLog] = useMutation(INSERT_GLOBETOTTER_LOG);
 
   useEffect(() => {
-    console.log("InsertGlobetotterLog useEffect action: ", action);
-
     if (action === "") {
       return;
     }
-
     const actionobj = JSON.parse(action);
-
     //Check if action is ok
     const action_validator = new Schema({
       globe_id: {
@@ -51,13 +47,6 @@ const InsertGlobetotterLog = ({ action }) => {
     });
 
     const errors = action_validator.validate(actionobj);
-
-    console.log("actionobj.object_data", actionobj.object_data);
-    console.log(
-      "object_data stringify:",
-      JSON.stringify(actionobj.object_data)
-    );
-
     if (errors.length === 0) {
       insertGlobetotterLog({
         variables: {

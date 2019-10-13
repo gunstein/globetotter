@@ -5,8 +5,6 @@ import SubscribeToGlobeActions from "./SubscribeToGlobeActions";
 import GlobeQuery from "./GlobeQuery";
 
 const SingleGlobeHandler = ({ globeid }) => {
-  console.log("SingleGlobeHandler globeid: ", globeid);
-  //const [globeid, setGlobeid] = useState(globeid_param);
   const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is ran before subscription start
 
   const [lastTransactionReceived, setLastTransactionReceived] = useState(0); //set vi handlequery
@@ -16,9 +14,6 @@ const SingleGlobeHandler = ({ globeid }) => {
   const [lastActionFromSphere, setLastActionFromSphere] = useState("");
 
   const handleQuery = queryResult => {
-    //Call setLastActionFromServer
-    console.log("handleQuery queryResult :", queryResult);
-    console.log("queryResult length: ", queryResult.length);
     if (subscriptionMode === 0) {
       setSubscriptonMode(1);
     }
@@ -46,8 +41,6 @@ const SingleGlobeHandler = ({ globeid }) => {
   };
 
   const handleSubscription = lastTransQueryResult => {
-    //Call setLastTransaction
-    console.log("handleSubscription: ", lastTransQueryResult);
     if (lastTransQueryResult.globetotter_log.length !== 1) {
       //Empty globe, probably
       console.log(
@@ -57,7 +50,6 @@ const SingleGlobeHandler = ({ globeid }) => {
     }
     const temptrans = lastTransQueryResult.globetotter_log[0].id;
     if (temptrans > lastTransactionOnServer) {
-      console.log("calling setLastTransactionOnServer :", temptrans);
       setSubscriptonMode(0);
       setLastTransactionOnServer(temptrans);
     }
@@ -65,7 +57,6 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const handleSphereDrawAction = action => {
     //Run mutation to update Hasura
-    console.log("handleSphereDrawAction : ", action);
     setLastActionFromSphere(action);
     //setLastActionFromSphereCounter(lastActionFromSphereCounter + 1);
     return null;
