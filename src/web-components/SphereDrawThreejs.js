@@ -67,7 +67,7 @@ class SphereDraw extends HTMLElement {
     this.controls.maxDistance = 1000;
     this.controls.update();
 
-    this.geometry = new THREE.SphereGeometry(this.RADIUS, 100, 100);
+    this.geometry = new THREE.SphereGeometry(this.RADIUS, 32, 32);
     this.material = new THREE.MeshStandardMaterial({
       color: 0x333344
     });
@@ -119,7 +119,9 @@ class SphereDraw extends HTMLElement {
     if (Array.isArray(geomAction)) {
       geomAction.forEach(singleaction => {
         singleaction.object_data = JSON.parse(singleaction.object_data);
+        //Can have situations where transaction is received before. Check this.
         if (this.spheres.indexOf(singleaction.transaction_uuid) === -1) {
+          //Try to avoid hanging gui
           this.addGeometryActionToSphereSurface(singleaction);
         }
       });
@@ -129,6 +131,7 @@ class SphereDraw extends HTMLElement {
         this.addGeometryActionToSphereSurface(geomAction);
       }
     }
+    this.render();
   }
 
   addGeometryActionToSphereSurface(geomAction) {
@@ -138,7 +141,8 @@ class SphereDraw extends HTMLElement {
         geomAction.object_data.position.y,
         geomAction.object_data.position.z
       );
-      let geometry = new THREE.SphereGeometry(10, 20, 20);
+      //let geometry = new THREE.SphereGeometry(10, 20, 20);
+      let geometry = new THREE.BoxGeometry(10, 10, 10);
       let material = new THREE.MeshStandardMaterial({
         color: geomAction.object_data.color
       });
@@ -147,7 +151,7 @@ class SphereDraw extends HTMLElement {
       mesh.position.copy(vec3);
       this.scene.add(mesh);
       this.spheres.push(geomAction.transaction_uuid);
-      this.render();
+      //this.render();
     }
   }
 
@@ -183,6 +187,7 @@ class SphereDraw extends HTMLElement {
         geomAction.globe_id = Number(this.globeid);
 
         this.addGeometryActionToSphereSurface(geomAction);
+        this.render();
         this.dispatchEvent(
           new CustomEvent("onSphereDrawAction", {
             bubbles: true,
