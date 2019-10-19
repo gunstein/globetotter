@@ -1,14 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import AppBar from "@material-ui/core/AppBar";
-import Navbar from "./navbar";
-import Toolbar from "@material-ui/core/Toolbar";
+import PrimarySearchAppBar from "./appbar";
 import TypoGraphy from "@material-ui/core/Typography";
 import client from "./HasuraApolloClient";
 import { ApolloProvider } from "@apollo/react-hooks";
 
-import "./styles.css";
-import "./web-components/SphereDrawThreejs";
 import { makeStyles } from "@material-ui/core/styles";
 import SingleGlobeHandler from "./SingleGlobeHandler/SingleGlobeHandler";
 
@@ -34,14 +30,7 @@ function App() {
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Paper className={classes.paper}>
-              <AppBar color="primary" position="static">
-                <Toolbar>
-                  <TypoGraphy variant="subtitle1" color="inherit">
-                    My header
-                  </TypoGraphy>
-                  <Navbar />
-                </Toolbar>
-              </AppBar>
+              <PrimarySearchAppBar />
             </Paper>
           </Grid>
           <Grid item xs={6}>

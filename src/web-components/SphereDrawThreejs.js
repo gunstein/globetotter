@@ -119,7 +119,9 @@ class SphereDraw extends HTMLElement {
     if (Array.isArray(geomAction)) {
       geomAction.forEach(singleaction => {
         singleaction.object_data = JSON.parse(singleaction.object_data);
+        //Can have situations where transaction is received before. Check this.
         if (this.spheres.indexOf(singleaction.transaction_uuid) === -1) {
+          //Try to avoid hanging gui
           this.addGeometryActionToSphereSurface(singleaction);
         }
       });
@@ -129,6 +131,7 @@ class SphereDraw extends HTMLElement {
         this.addGeometryActionToSphereSurface(geomAction);
       }
     }
+    this.render();
   }
 
   addGeometryActionToSphereSurface(geomAction) {
@@ -148,7 +151,7 @@ class SphereDraw extends HTMLElement {
       mesh.position.copy(vec3);
       this.scene.add(mesh);
       this.spheres.push(geomAction.transaction_uuid);
-      this.render();
+      //this.render();
     }
   }
 
@@ -184,6 +187,7 @@ class SphereDraw extends HTMLElement {
         geomAction.globe_id = Number(this.globeid);
 
         this.addGeometryActionToSphereSurface(geomAction);
+        this.render();
         this.dispatchEvent(
           new CustomEvent("onSphereDrawAction", {
             bubbles: true,
