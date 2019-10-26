@@ -41,6 +41,8 @@ class SphereDraw extends HTMLElement {
     this.controls.addEventListener("change", this.render.bind(this));
 
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    this.canvas.addEventListener("touchstart", this.handleMouseDown.bind(this));
+          
     this.globeid = this.getAttribute("globeid");
   }
 
