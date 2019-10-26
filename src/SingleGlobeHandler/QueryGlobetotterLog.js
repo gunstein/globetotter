@@ -1,8 +1,7 @@
 import { useQuery } from "@apollo/react-hooks";
-import QUERY_GLOBETOTTER_LOG from "../graphql/queries/GlobetotterQuery";
+import QUERY_GLOBETOTTER_LOG from "../graphql/queries/GlobetotterLogQuery";
 
-function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
-  console.time("totalquery");
+function QueryGlobetotterLog({ globeid, lasttrans, handleGlobeQuery }) {
   const { loading, error, data } = useQuery(QUERY_GLOBETOTTER_LOG, {
     fetchPolicy: "no-cache",
     variables: { globeid: globeid, last_transaction: lasttrans }
@@ -17,4 +16,4 @@ function GlobeQuery({ globeid, lasttrans, handleGlobeQuery }) {
   return null;
 }
 
-export default GlobeQuery;
+export default QueryGlobetotterLog;
