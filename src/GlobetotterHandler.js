@@ -1,16 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
-import AsyncSelect from "react-select/async";
-import { colourOptions } from "./data";
+import AsyncCreatableSelect from "react-select/async-creatable";
 import AddIcon from "@material-ui/icons/Add";
 import Fab from "@material-ui/core/Fab";
 import Box from "@material-ui/core/Box";
 import SingleGlobeHandler from "./SingleGlobeHandler/SingleGlobeHandler";
-import client from "./HasuraApolloClient";
+import client from "./graphql/HasuraApolloClient";
 import { ApolloProvider } from "@apollo/react-hooks";
+import gql from "graphql-tag";
+import GlobeSelect from "./GlobeSelect";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -26,18 +27,67 @@ const useStyles = makeStyles(theme => ({
 export default function GlobetotterHandler() {
   const classes = useStyles();
 
-  const filterColors = (inputValue: string) => {
-    return colourOptions.filter(i =>
-      i.label.toLowerCase().includes(inputValue.toLowerCase())
-    );
+  const [globeidArray, setGlobeidArray] = useState([]);
+
+  const addGlobeid = globeid => {
+    setGlobeidArray([...globeidArray, globeid.value]);
   };
 
-  const promiseOptions = inputValue =>
-    new Promise(resolve => {
-      setTimeout(() => {
-        resolve(filterColors(inputValue));
-      }, 1000);
+  const fetchGlobes = async (input, cb) => {
+    console.log("fetchGlobes input: ", input);
+    /*
+    if (input && input.trim().length < 4) {
+      return [];
+    }*/
+
+    const res = await client.query({
+      fetchPolicy: "no-cache",
+      query: gql`
+        query {
+          globetotter_globe(
+            limit: 10
+            where: { name: { _ilike: "%${input}%" } }
+          ) {
+            name
+            id
+          }
+        }
+      `
     });
+
+    if (res.data && res.data.globetotter_globe) {
+      return res.data.globetotter_globe.map(a => ({
+        label: a.name,
+        value: a.id
+      }));
+    }
+
+    return [];
+  };
+
+  const newGlobe = async (input, cb) => {
+    const res = await client.mutate({
+      fetchPolicy: "no-cache",
+      mutation: gql`
+        mutation MutationInsertGlobe {
+          insert_globetotter_globe(objects: { name: "${input}" }) {
+            returning {
+              name
+              id
+            }
+            affected_rows
+          }
+        }
+      `
+    });
+    if (res.data && res.data.insert_globetotter_globe.affected_rows === 1) {
+      addGlobeid({
+        label: res.data.insert_globetotter_globe.returning[0].name,
+        value: res.data.insert_globetotter_globe.returning[0].id
+      });
+    }
+  };
+
   return (
     <div>
       <ApolloProvider client={client}>
@@ -52,28 +102,30 @@ export default function GlobetotterHandler() {
           <Grid item xs={12} sm={10}>
             <Box display="flex" p={1} bgcolor="background.paper">
               <Box width="100%">
-                <AsyncSelect
-                  cacheOptions
+                {/*<GlobeSelect />*/}
+
+                <AsyncCreatableSelect
+                  loadOptions={fetchGlobes}
                   defaultOptions
-                  loadOptions={promiseOptions}
+                  onCreateOption={newGlobe}
+                  onChange={addGlobeid}
                 />
-              </Box>
-              <Box ml={1}>
-                <Fab size="small" color="default" aria-label="edit">
-                  <AddIcon />
-                </Fab>
               </Box>
             </Box>
           </Grid>
 
           <Grid item xs={12} sm={6}>
             <Paper className={classes.paper}>
-              <SingleGlobeHandler globeid="1" />
+              {globeidArray.length >= 1 ? (
+                <SingleGlobeHandler globeid={globeidArray[0]} />
+              ) : null}
             </Paper>
           </Grid>
           <Grid item xs={12} sm={6}>
             <Paper className={classes.paper}>
-              <SingleGlobeHandler globeid="2" />
+              {globeidArray.length >= 2 ? (
+                <SingleGlobeHandler globeid={globeidArray[1]} />
+              ) : null}
             </Paper>
           </Grid>
         </Grid>

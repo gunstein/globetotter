@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import SphereDrawWrapper from "../web-components/SphereDrawWrapper";
 import InsertGlobetotterLog from "./InsertGlobetotterLog";
 import SubscribeToGlobeActions from "./SubscribeToGlobeActions";
-import GlobeQuery from "./GlobeQuery";
+import QueryGlobetotterLog from "./QueryGlobetotterLog";
 
 const SingleGlobeHandler = ({ globeid }) => {
   const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is ran before subscription start
@@ -72,7 +72,7 @@ const SingleGlobeHandler = ({ globeid }) => {
         />
       ) : null}
       {!subscriptionMode ? (
-        <GlobeQuery
+        <QueryGlobetotterLog
           globeid={globeid}
           lasttrans={lastTransactionReceived}
           handleGlobeQuery={handleQuery}
