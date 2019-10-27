@@ -4,14 +4,13 @@ import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import AsyncCreatableSelect from "react-select/async-creatable";
-import AddIcon from "@material-ui/icons/Add";
-import Fab from "@material-ui/core/Fab";
 import Box from "@material-ui/core/Box";
 import SingleGlobeHandler from "./SingleGlobeHandler/SingleGlobeHandler";
 import client from "./graphql/HasuraApolloClient";
 import { ApolloProvider } from "@apollo/react-hooks";
 import gql from "graphql-tag";
-import GlobeSelect from "./GlobeSelect";
+import "typeface-roboto";
+import Snackbar from "@material-ui/core/Snackbar";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -26,20 +25,24 @@ const useStyles = makeStyles(theme => ({
 
 export default function GlobetotterHandler() {
   const classes = useStyles();
-
   const [globeidArray, setGlobeidArray] = useState([]);
+  const [stateSnackbar, setStateSnackbar] = React.useState({
+    open: false,
+    vertical: "top",
+    horizontal: "center"
+  });
+
+  const { vertical, horizontal, open } = stateSnackbar;
 
   const addGlobeid = globeid => {
+    if (globeidArray.length >= 4) {
+      setStateSnackbar({ ...stateSnackbar, open: true });
+      return;
+    }
     setGlobeidArray([...globeidArray, globeid.value]);
   };
 
   const fetchGlobes = async (input, cb) => {
-    console.log("fetchGlobes input: ", input);
-    /*
-    if (input && input.trim().length < 4) {
-      return [];
-    }*/
-
     const res = await client.query({
       fetchPolicy: "no-cache",
       query: gql`
@@ -65,7 +68,15 @@ export default function GlobetotterHandler() {
     return [];
   };
 
+  const handleCloseSnackbar = () => {
+    setStateSnackbar({ ...stateSnackbar, open: false });
+  };
+
   const newGlobe = async (input, cb) => {
+    if (globeidArray.length >= 4) {
+      setStateSnackbar({ ...stateSnackbar, open: true });
+      return;
+    }
     const res = await client.mutate({
       fetchPolicy: "no-cache",
       mutation: gql`
@@ -102,14 +113,14 @@ export default function GlobetotterHandler() {
           <Grid item xs={12} sm={10}>
             <Box display="flex" p={1} bgcolor="background.paper">
               <Box width="100%">
-                {/*<GlobeSelect />*/}
-
-                <AsyncCreatableSelect
-                  loadOptions={fetchGlobes}
-                  defaultOptions
-                  onCreateOption={newGlobe}
-                  onChange={addGlobeid}
-                />
+                <Typography>
+                  <AsyncCreatableSelect
+                    loadOptions={fetchGlobes}
+                    defaultOptions
+                    onCreateOption={newGlobe}
+                    onChange={addGlobeid}
+                  />
+                </Typography>
               </Box>
             </Box>
           </Grid>
@@ -128,7 +139,31 @@ export default function GlobetotterHandler() {
               ) : null}
             </Paper>
           </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper className={classes.paper}>
+              {globeidArray.length >= 3 ? (
+                <SingleGlobeHandler globeid={globeidArray[2]} />
+              ) : null}
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Paper className={classes.paper}>
+              {globeidArray.length >= 4 ? (
+                <SingleGlobeHandler globeid={globeidArray[3]} />
+              ) : null}
+            </Paper>
+          </Grid>
         </Grid>
+        <Snackbar
+          anchorOrigin={{ vertical, horizontal }}
+          key={`${vertical},${horizontal}`}
+          open={open}
+          onClose={handleCloseSnackbar}
+          ContentProps={{
+            "aria-describedby": "message-id"
+          }}
+          message={<span id="message-id">Max 4 globes</span>}
+        />
       </ApolloProvider>
     </div>
   );

@@ -23,6 +23,7 @@
     "react-select": "3.0.8",
     "subscriptions-transport-ws": "0.9.16",
     "three": "0.108.0",
+    "typeface-roboto": "0.0.75",
     "validate": "5.0.0"
   },
   "devDependencies": {
