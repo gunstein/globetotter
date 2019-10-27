@@ -1,7 +1,5 @@
 # globetotter
 
-Created with CodeSandbox
-
 UNDER CONSTRUCTION
 
 Just for fun!
