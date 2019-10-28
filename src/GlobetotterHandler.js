@@ -11,15 +11,23 @@ import { ApolloProvider } from "@apollo/react-hooks";
 import gql from "graphql-tag";
 import "typeface-roboto";
 import Snackbar from "@material-ui/core/Snackbar";
+import Fab from "@material-ui/core/Fab";
+import CloseIcon from "@material-ui/icons/Close";
 
 const useStyles = makeStyles(theme => ({
   root: {
     //flexGrow: 1,
   },
   paper: {
+    position: "relative",
     padding: theme.spacing(2),
     textAlign: "center",
     color: theme.palette.text.secondary
+  },
+  close: {
+    position: "absolute",
+    top: theme.spacing(2),
+    right: theme.spacing(2)
   }
 }));
 
@@ -33,6 +41,13 @@ export default function GlobetotterHandler() {
   });
 
   const { vertical, horizontal, open } = stateSnackbar;
+
+  const handleCloseGlobe = globeid => {
+    const temp = globeidArray.filter(function(item) {
+      return item !== globeid;
+    });
+    setGlobeidArray(temp);
+  };
 
   const addGlobeid = globeid => {
     if (globeidArray.length >= 4) {
@@ -100,71 +115,54 @@ export default function GlobetotterHandler() {
   };
 
   return (
-    <div>
-      <ApolloProvider client={client}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={2}>
-            <Box width="100%" p={1}>
-              <Typography p={2} variant="h6">
-                Globetotter
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid item xs={12} sm={10}>
-            <Box display="flex" p={1} bgcolor="background.paper">
-              <Box width="100%">
-                <Typography>
-                  <AsyncCreatableSelect
-                    loadOptions={fetchGlobes}
-                    defaultOptions
-                    onCreateOption={newGlobe}
-                    onChange={addGlobeid}
-                  />
-                </Typography>
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <Paper className={classes.paper}>
-              {globeidArray.length >= 1 ? (
-                <SingleGlobeHandler globeid={globeidArray[0]} />
-              ) : null}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Paper className={classes.paper}>
-              {globeidArray.length >= 2 ? (
-                <SingleGlobeHandler globeid={globeidArray[1]} />
-              ) : null}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Paper className={classes.paper}>
-              {globeidArray.length >= 3 ? (
-                <SingleGlobeHandler globeid={globeidArray[2]} />
-              ) : null}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Paper className={classes.paper}>
-              {globeidArray.length >= 4 ? (
-                <SingleGlobeHandler globeid={globeidArray[3]} />
-              ) : null}
-            </Paper>
-          </Grid>
+    <ApolloProvider client={client}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={2}>
+          <Box width="100%" p={1}>
+            <Typography p={2} variant="h6">
+              Globetotter
+            </Typography>
+          </Box>
         </Grid>
-        <Snackbar
-          anchorOrigin={{ vertical, horizontal }}
-          key={`${vertical},${horizontal}`}
-          open={open}
-          onClose={handleCloseSnackbar}
-          ContentProps={{
-            "aria-describedby": "message-id"
-          }}
-          message={<span id="message-id">Max 4 globes</span>}
-        />
-      </ApolloProvider>
-    </div>
+        <Grid item xs={12} sm={10}>
+          <Box display="flex" p={1} bgcolor="background.paper">
+            <Box width="100%">
+              <AsyncCreatableSelect
+                loadOptions={fetchGlobes}
+                defaultOptions
+                onCreateOption={newGlobe}
+                onChange={addGlobeid}
+              />
+            </Box>
+          </Box>
+        </Grid>
+        {globeidArray.map(globeid => (
+          <Grid item xs={12} sm={6}>
+            <Paper className={classes.paper}>
+              <Fab
+                color="primary"
+                aria-label="close"
+                size="small"
+                onClick={() => handleCloseGlobe(globeid)}
+                className={classes.close}
+              >
+                <CloseIcon />
+              </Fab>
+              <SingleGlobeHandler globeid={globeid} />
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+      <Snackbar
+        anchorOrigin={{ vertical, horizontal }}
+        key={`${vertical},${horizontal}`}
+        open={open}
+        onClose={handleCloseSnackbar}
+        ContentProps={{
+          "aria-describedby": "message-id"
+        }}
+        message={<span id="message-id">Max 4 globes</span>}
+      />
+    </ApolloProvider>
   );
 }
