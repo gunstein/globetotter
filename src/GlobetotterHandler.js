@@ -9,7 +9,6 @@ import SingleGlobeHandler from "./SingleGlobeHandler/SingleGlobeHandler";
 import client from "./graphql/HasuraApolloClient";
 import { ApolloProvider } from "@apollo/react-hooks";
 import gql from "graphql-tag";
-import "typeface-roboto";
 import Snackbar from "@material-ui/core/Snackbar";
 import Fab from "@material-ui/core/Fab";
 import CloseIcon from "@material-ui/icons/Close";
@@ -28,6 +27,11 @@ const useStyles = makeStyles(theme => ({
     position: "absolute",
     top: theme.spacing(2),
     right: theme.spacing(2)
+  },
+  globename: {
+    position: "absolute",
+    top: theme.spacing(2),
+    left: theme.spacing(2)
   }
 }));
 
@@ -42,19 +46,21 @@ export default function GlobetotterHandler() {
 
   const { vertical, horizontal, open } = stateSnackbar;
 
-  const handleCloseGlobe = globeid => {
-    const temp = globeidArray.filter(function(item) {
+  const handleCloseGlobe = index => {
+    /*const temp = globeidArray.filter(function(item) {
       return item !== globeid;
-    });
-    setGlobeidArray(temp);
+    });*/
+    var tempArray = [...globeidArray]; // make a separate copy of the array
+    tempArray.splice(index, 1);
+    setGlobeidArray(tempArray);
   };
 
-  const addGlobeid = globeid => {
+  const addGlobe = globe => {
     if (globeidArray.length >= 4) {
       setStateSnackbar({ ...stateSnackbar, open: true });
       return;
     }
-    setGlobeidArray([...globeidArray, globeid.value]);
+    setGlobeidArray([...globeidArray, globe]);
   };
 
   const fetchGlobes = async (input, cb) => {
@@ -107,7 +113,7 @@ export default function GlobetotterHandler() {
       `
     });
     if (res.data && res.data.insert_globetotter_globe.affected_rows === 1) {
-      addGlobeid({
+      addGlobe({
         label: res.data.insert_globetotter_globe.returning[0].name,
         value: res.data.insert_globetotter_globe.returning[0].id
       });
@@ -131,24 +137,27 @@ export default function GlobetotterHandler() {
                 loadOptions={fetchGlobes}
                 defaultOptions
                 onCreateOption={newGlobe}
-                onChange={addGlobeid}
+                onChange={addGlobe}
               />
             </Box>
           </Box>
         </Grid>
-        {globeidArray.map(globeid => (
-          <Grid item xs={12} sm={6}>
+        {globeidArray.map((globe, i) => (
+          <Grid item xs={12} sm={6} key={i}>
             <Paper className={classes.paper}>
+              <Typography className={classes.globename} p={1} variant="caption">
+                {globe.label}
+              </Typography>
               <Fab
                 color="primary"
                 aria-label="close"
                 size="small"
-                onClick={() => handleCloseGlobe(globeid)}
+                onClick={() => handleCloseGlobe(i)}
                 className={classes.close}
               >
                 <CloseIcon />
               </Fab>
-              <SingleGlobeHandler globeid={globeid} />
+              <SingleGlobeHandler globeid={globe.value} />
             </Paper>
           </Grid>
         ))}
