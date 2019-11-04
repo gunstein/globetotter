@@ -46,10 +46,17 @@ export default function GlobetotterHandler() {
 
   const { vertical, horizontal, open } = stateSnackbar;
 
-  const handleCloseGlobe = index => {
-    /*const temp = globeidArray.filter(function(item) {
-      return item !== globeid;
-    });*/
+  const uuidv4 = () => {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+      (
+        c ^
+        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
+      ).toString(16)
+    );
+  };
+  const handleCloseGlobe = uuidkey => {
+    //find element by uuid and remove it.
+    const index = globeidArray.map(e => e.uuid).indexOf(uuidkey);
     var tempArray = [...globeidArray]; // make a separate copy of the array
     tempArray.splice(index, 1);
     setGlobeidArray(tempArray);
@@ -82,7 +89,8 @@ export default function GlobetotterHandler() {
     if (res.data && res.data.globetotter_globe) {
       return res.data.globetotter_globe.map(a => ({
         label: a.name,
-        value: a.id
+        value: a.id,
+        uuid: uuidv4()
       }));
     }
 
@@ -115,7 +123,8 @@ export default function GlobetotterHandler() {
     if (res.data && res.data.insert_globetotter_globe.affected_rows === 1) {
       addGlobe({
         label: res.data.insert_globetotter_globe.returning[0].name,
-        value: res.data.insert_globetotter_globe.returning[0].id
+        value: res.data.insert_globetotter_globe.returning[0].id,
+        uuid: uuidv4()
       });
     }
   };
@@ -142,8 +151,8 @@ export default function GlobetotterHandler() {
             </Box>
           </Box>
         </Grid>
-        {globeidArray.map((globe, i) => (
-          <Grid item xs={12} sm={6} key={i}>
+        {globeidArray.map(globe => (
+          <Grid item xs={12} sm={6} key={globe.uuid}>
             <Paper className={classes.paper}>
               <Typography className={classes.globename} p={1} variant="caption">
                 {globe.label}
@@ -152,7 +161,7 @@ export default function GlobetotterHandler() {
                 color="primary"
                 aria-label="close"
                 size="small"
-                onClick={() => handleCloseGlobe(i)}
+                onClick={() => handleCloseGlobe(globe.uuid)}
                 className={classes.close}
               >
                 <CloseIcon />
