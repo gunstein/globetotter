@@ -41,8 +41,8 @@ class SphereDraw extends HTMLElement {
     this.controls.addEventListener("change", this.render.bind(this));
 
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
-    this.canvas.addEventListener("touchstart", this.handleMouseDown.bind(this));
-          
+    this.canvas.addEventListener("touchend", this.handleTouchEnd.bind(this));
+
     this.globeid = this.getAttribute("globeid");
   }
 
@@ -153,7 +153,6 @@ class SphereDraw extends HTMLElement {
       mesh.position.copy(vec3);
       this.scene.add(mesh);
       this.spheres.push(geomAction.transaction_uuid);
-      //this.render();
     }
   }
 
@@ -166,20 +165,15 @@ class SphereDraw extends HTMLElement {
     );
   }
 
-  handleMouseDown(event) {
-    event.preventDefault();
-    this.px = (event.offsetX / this.canvas.clientWidth) * 2 - 1;
-    this.py = -(event.offsetY / this.canvas.clientHeight) * 2 + 1;
-    this.mousepoint = new THREE.Vector2(this.px, this.py);
+  handleRaycast(point) {
+    this.raycaster.setFromCamera(point, this.camera);
 
-    this.raycaster.setFromCamera(this.mousepoint, this.camera);
-
-    this.intersects = this.raycaster.intersectObjects(this.bigsphere);
-    if (this.intersects.length > 0) {
-      this.INTERSECTED = this.intersects[0].object;
-      if (this.INTERSECTED) {
+    const intersects = this.raycaster.intersectObjects(this.bigsphere);
+    if (intersects.length > 0) {
+      const INTERSECTED = intersects[0].object;
+      if (INTERSECTED) {
         let geomAction = { operation_id: this.OperationEnum.insert };
-        const position = this.intersects[0].point;
+        const position = intersects[0].point;
         const color = this.COLORS[
           Math.floor(Math.random() * this.COLORS.length)
         ];
@@ -198,6 +192,27 @@ class SphereDraw extends HTMLElement {
         );
       }
     }
+  }
+
+  handleTouchEnd(event) {
+    event.preventDefault();
+
+    const rect = this.canvas.getBoundingClientRect();
+    const xtemp = event.changedTouches[0].clientX - rect.left;
+    const ytemp = event.changedTouches[0].clientY - rect.top;
+
+    const x = (xtemp / this.canvas.clientWidth) * 2 - 1;
+    const y = -(ytemp / this.canvas.clientHeight) * 2 + 1;
+    const point = new THREE.Vector2(x, y);
+    this.handleRaycast(point);
+  }
+
+  handleMouseDown(event) {
+    event.preventDefault();
+    const x = (event.offsetX / this.canvas.clientWidth) * 2 - 1;
+    const y = -(event.offsetY / this.canvas.clientHeight) * 2 + 1;
+    const point = new THREE.Vector2(x, y);
+    this.handleRaycast(point);
   }
 }
 /* Registration */
