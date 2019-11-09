@@ -46,7 +46,11 @@ class SphereDraw extends HTMLElement {
     this.globeid = this.getAttribute("globeid");
   }
 
-  disconnectedCallback() {}
+  disconnectedCallback() {
+    this.renderer.dispose();
+    this.scene.dispose();
+    this.controls.dispose();
+  }
 
   init() {
     this.scene = new THREE.Scene();
@@ -75,6 +79,8 @@ class SphereDraw extends HTMLElement {
     });
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
+    this.geometry.dispose();
+    this.material.dispose();
 
     this.bigsphere.push(this.mesh);
 
@@ -152,6 +158,8 @@ class SphereDraw extends HTMLElement {
       mesh.userData = { uuid: geomAction.object_uuid };
       mesh.position.copy(vec3);
       this.scene.add(mesh);
+      geometry.dispose();
+      material.dispose();
       this.spheres.push(geomAction.transaction_uuid);
     }
   }
