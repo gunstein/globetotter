@@ -152,13 +152,18 @@ export default function GlobetotterHandler() {
           </Box>
         </Grid>
         {globeidArray.map(globe => (
-          <Grid item xs={12} sm={6} key={globe.uuid}>
+          <Grid
+            item
+            xs={12}
+            sm={globeidArray.length === 1 ? 12 : 6}
+            key={globe.uuid}
+          >
             <Paper className={classes.paper}>
               <Typography className={classes.globename} p={1} variant="caption">
                 {globe.label}
               </Typography>
               <Fab
-                color="primary"
+                color="default"
                 aria-label="close"
                 size="small"
                 onClick={() => handleCloseGlobe(globe.uuid)}
