@@ -5,7 +5,7 @@ import SubscribeToGlobeActions from "./SubscribeToGlobeActions";
 import QueryGlobetotterLog from "./QueryGlobetotterLog";
 
 const SingleGlobeHandler = ({ globeid }) => {
-  const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is ran before subscription start
+  const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is run before subscription start
 
   const [lastTransactionReceived, setLastTransactionReceived] = useState(0); //set vi handlequery
   const [lastTransactionOnServer, setLastTransactionOnServer] = useState(0); //Set via subscription
@@ -58,10 +58,9 @@ const SingleGlobeHandler = ({ globeid }) => {
   const handleSphereDrawAction = action => {
     //Run mutation to update Hasura
     setLastActionFromSphere(action);
-    //setLastActionFromSphereCounter(lastActionFromSphereCounter + 1);
     return null;
   };
-  //action_counter={lastActionFromSphereCounter}
+
   return (
     <div>
       <InsertGlobetotterLog action={lastActionFromSphere} />

@@ -1,17 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import Box from "@material-ui/core/Box";
-import SingleGlobeHandler from "./SingleGlobeHandler/SingleGlobeHandler";
-import client from "./graphql/HasuraApolloClient";
+import SingleGlobeHandler from "../SingleGlobeHandler/SingleGlobeHandler";
+import client from "../graphql/HasuraApolloClient";
 import { ApolloProvider } from "@apollo/react-hooks";
 import gql from "graphql-tag";
 import Snackbar from "@material-ui/core/Snackbar";
 import Fab from "@material-ui/core/Fab";
 import CloseIcon from "@material-ui/icons/Close";
+import { useParams } from "react-router-dom";
+import uuidv4 from "../utils/uuidv4";
+import QueryGlobetotterGlobe from "./QueryGlobetotterGlobe";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -36,24 +39,28 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export default function GlobetotterHandler() {
+  const [initMode, setInitMode] = useState(1);
+  const globenameParam = useParams();
   const classes = useStyles();
   const [globeidArray, setGlobeidArray] = useState([]);
-  const [stateSnackbar, setStateSnackbar] = React.useState({
+  const [stateSnackbar, setStateSnackbar] = useState({
     open: false,
     vertical: "top",
     horizontal: "center"
   });
 
+  const handleParameterGlobeQuery = queryResult => {
+    if (queryResult.length > 0) {
+      addGlobe({
+        label: queryResult[0].name,
+        value: queryResult[0].id
+      });
+    }
+    setInitMode(0);
+  };
+
   const { vertical, horizontal, open } = stateSnackbar;
 
-  const uuidv4 = () => {
-    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-      (
-        c ^
-        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))
-      ).toString(16)
-    );
-  };
   const handleCloseGlobe = uuidkey => {
     //find element by uuid and remove it.
     const index = globeidArray.map(e => e.uuid).indexOf(uuidkey);
@@ -67,7 +74,8 @@ export default function GlobetotterHandler() {
       setStateSnackbar({ ...stateSnackbar, open: true });
       return;
     }
-    setGlobeidArray([...globeidArray, globe]);
+    const newGlobe = { ...globe, uuid: uuidv4() };
+    setGlobeidArray([...globeidArray, newGlobe]);
   };
 
   const fetchGlobes = async (input, cb) => {
@@ -89,8 +97,7 @@ export default function GlobetotterHandler() {
     if (res.data && res.data.globetotter_globe) {
       return res.data.globetotter_globe.map(a => ({
         label: a.name,
-        value: a.id,
-        uuid: uuidv4()
+        value: a.id
       }));
     }
 
@@ -123,14 +130,26 @@ export default function GlobetotterHandler() {
     if (res.data && res.data.insert_globetotter_globe.affected_rows === 1) {
       addGlobe({
         label: res.data.insert_globetotter_globe.returning[0].name,
-        value: res.data.insert_globetotter_globe.returning[0].id,
-        uuid: uuidv4()
+        value: res.data.insert_globetotter_globe.returning[0].id
       });
     }
   };
 
+  const SetInitModeToFalseAndReturnNull = () => {
+    setInitMode(0);
+    return null;
+  };
+
   return (
     <ApolloProvider client={client}>
+      {initMode && Object.keys(globenameParam).length !== 0 ? (
+        <QueryGlobetotterGlobe
+          name={globenameParam}
+          handleParameterGlobeQuery={handleParameterGlobeQuery}
+        />
+      ) : (
+        <SetInitModeToFalseAndReturnNull />
+      )}
       <Grid container spacing={3}>
         <Grid item xs={12} sm={2}>
           <Box width="100%" p={1}>
