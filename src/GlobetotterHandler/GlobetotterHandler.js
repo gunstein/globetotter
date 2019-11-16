@@ -85,7 +85,8 @@ export default function GlobetotterHandler() {
         query {
           globetotter_globe(
             limit: 10
-            where: { name: { _ilike: "%${input}%" } }
+            where: { name: { _ilike: "%${input}%" } } 
+            order_by: {name: asc}
           ) {
             name
             id
