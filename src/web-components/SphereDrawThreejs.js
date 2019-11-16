@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { MeshLambertMaterial } from "three";
 
 /* Template */
 var template = document.createElement("template");
@@ -26,8 +27,7 @@ class SphereDraw extends HTMLElement {
   _all_transactions = [];
 
   _geometry = new THREE.BoxBufferGeometry(10, 10, 10);
-  _material = new THREE.MeshLambertMaterial();
-  _vec3 = new THREE.Vector3();
+  _materialMap = new Map(); //new THREE.MeshLambertMaterial();
   _min_begin = null;
   _max_end = null;
 
@@ -152,18 +152,27 @@ class SphereDraw extends HTMLElement {
   }
 
   addGeometryActionToSphereSurface(geomAction) {
-    const build_mesh = geomAction => {
-      this._vec3.set(
+    //one materail for each color
+    const getMaterial = color => {
+      let material = this._materialMap.get(color);
+      if (material === undefined) {
+        material = new MeshLambertMaterial({ color: color });
+        this._materialMap.set(color, material);
+      }
+      return material;
+    };
+
+    const buildMesh = geomAction => {
+      let mesh = new THREE.Mesh(
+        this._geometry,
+        getMaterial(geomAction.object_data.color)
+      );
+      mesh.userData = { uuid: geomAction.object_uuid, begin: null, end: null };
+      mesh.position.set(
         geomAction.object_data.position.x,
         geomAction.object_data.position.y,
         geomAction.object_data.position.z
       );
-
-      this._material.color = geomAction.object_data.color;
-
-      let mesh = new THREE.Mesh(this._geometry, this._material);
-      mesh.userData = { uuid: geomAction.object_uuid, begin: null, end: null };
-      mesh.position.copy(this._vec3);
 
       return mesh;
     };
@@ -176,16 +185,17 @@ class SphereDraw extends HTMLElement {
     if (!obj) {
       //Object does not exist? (same as insert)
       //legg til object med begin=konverter_unixepoch(transaction_timestamp)
-      let mesh = build_mesh(geomAction);
+      let mesh = buildMesh(geomAction);
       mesh.userData.begin = new Date(
         geomAction.transaction_timestamp
       ).getTime(); //unix epoch
       mesh.visible = true;
-      this.scene.add(mesh);
-      this._all_transactions.push(geomAction.transaction_uuid);
+
       if (this._min_begin === null) {
         this._min_begin = mesh.userData.begin;
       }
+      this._all_transactions.push(geomAction.transaction_uuid);
+      this.scene.add(mesh);
     } else {
       //this is update or delete
       //find object with correct name and where end is null.
@@ -205,7 +215,7 @@ class SphereDraw extends HTMLElement {
           this._all_transactions.push(geomAction.transaction_uuid);
           if (geomAction.operation_id === this.OperationEnum.update) {
             //Add new object if update
-            let mesh = build_mesh(geomAction);
+            let mesh = buildMesh(geomAction);
             mesh.userData.begin = temp_timestamp;
             mesh.visible = true;
             this.scene.add(mesh);
