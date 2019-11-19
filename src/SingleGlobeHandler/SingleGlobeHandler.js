@@ -49,6 +49,7 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [minHistorySlider, setMinHistorySlider] = useState(0);
   const [maxHistorySlider, setMaxHistorySlider] = useState(100);
+  const [currentHistorySliderValue, setCurrentHistorySliderValue] = useState(0);
 
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
@@ -106,6 +107,10 @@ const SingleGlobeHandler = ({ globeid }) => {
     return null;
   };
 
+  const handleSliderChangeCommitted = (event, newValue) => {
+    setCurrentHistorySliderValue(newValue);
+  };
+
   return (
     <React.Fragment>
       <InsertGlobetotterLog action={lastActionFromSphere} />
@@ -125,12 +130,14 @@ const SingleGlobeHandler = ({ globeid }) => {
       <SphereDrawWrapper
         globeid={globeid}
         lastaction={lastActionFromServer}
+        timeHistory={currentHistorySliderValue}
         onSphereDrawAction={handleSphereDrawAction}
         onHistoryLimitChange={handleHistoryLimitChange}
       />
       <Slider
         ValueLabelComponent={ValueLabelComponent}
         aria-label="custom thumb label"
+        onChangeCommitted={handleSliderChangeCommitted}
         defaultValue={maxHistorySlider}
         min={minHistorySlider}
         max={maxHistorySlider}
