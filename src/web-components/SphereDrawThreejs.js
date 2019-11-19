@@ -27,9 +27,13 @@ class SphereDraw extends HTMLElement {
   _all_transactions = [];
 
   _geometry = new THREE.BoxBufferGeometry(10, 10, 10);
-  _materialMap = new Map(); //new THREE.MeshLambertMaterial();
+  _materialMap = new Map();
   _min_begin = null;
   _max_end = null;
+  _current_color = null;
+  _use_random_color = true;
+
+  current_history_time = -1; //(attribute and property) -1 means now
 
   OperationEnum = Object.freeze({ insert: 1, update: 2, delete: 3 });
 
@@ -56,6 +60,40 @@ class SphereDraw extends HTMLElement {
     this.renderer.dispose();
     this.scene.dispose();
     this.controls.dispose();
+  }
+
+  get current_history_time() {
+    return this.getAttribute("current_history_time");
+  }
+  set current_history_time(value) {
+    this.setAttribute("current_history_time", value);
+  }
+  static get observedAttributes() {
+    return ["current_history_time"];
+  }
+
+  attributeChangedCallback(name, oldVal, newVal) {
+    if (name === "current_history_time") {
+      this.current_history_time = newVal;
+      //Go through every mesh and set visible according to current_history_time
+      this.scene.traverse(function(child) {
+        if (this.current_history_time === -1) {
+          //This is now, means only interested in "living" objects, end=null
+          if (child.userData.end === null) {
+            child.visible = true;
+          }
+        } else {
+          //only show objects where current_history_time is between begin and end.
+          if (
+            this.current_history_time > child.userData.begin &&
+            (this.current_history_time < child.userData.end ||
+              child.userData.end === null)
+          ) {
+            child.visible = true;
+          }
+        }
+      });
+    }
   }
 
   init() {
@@ -129,8 +167,10 @@ class SphereDraw extends HTMLElement {
   }
 
   addGeometryActionToSphereSurfaceJSON(geomActionJSON) {
-    const geomAction = JSON.parse(geomActionJSON);
+    const org_min_begin = this._min_begin;
+    const org_max_end = this._max_end;
 
+    const geomAction = JSON.parse(geomActionJSON);
     if (Array.isArray(geomAction)) {
       geomAction.forEach(singleaction => {
         singleaction.object_data = JSON.parse(singleaction.object_data);
@@ -149,10 +189,22 @@ class SphereDraw extends HTMLElement {
       }
     }
     this.render();
+
+    if (this._min_begin !== org_min_begin || this._max_end !== org_max_end) {
+      this.dispatchEvent(
+        new CustomEvent("onHistoryLimitChange", {
+          bubbles: true,
+          detail: JSON.stringify({
+            history_min: this._min_begin,
+            history_max: this._max_begin
+          })
+        })
+      );
+    }
   }
 
   addGeometryActionToSphereSurface(geomAction) {
-    //one materail for each color
+    //one material for each color
     const getMaterial = color => {
       let material = this._materialMap.get(color);
       if (material === undefined) {

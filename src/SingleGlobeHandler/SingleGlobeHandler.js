@@ -3,6 +3,40 @@ import SphereDrawWrapper from "../web-components/SphereDrawWrapper";
 import InsertGlobetotterLog from "./InsertGlobetotterLog";
 import SubscribeToGlobeActions from "./SubscribeToGlobeActions";
 import QueryGlobetotterLog from "./QueryGlobetotterLog";
+import Slider from "@material-ui/core/Slider";
+import Tooltip from "@material-ui/core/Tooltip";
+import PropTypes from "prop-types";
+
+function ValueLabelComponent(props) {
+  const { children, open, value } = props;
+
+  const popperRef = React.useRef(null);
+  React.useEffect(() => {
+    if (popperRef.current) {
+      popperRef.current.update();
+    }
+  });
+
+  return (
+    <Tooltip
+      PopperProps={{
+        popperRef
+      }}
+      open={open}
+      enterTouchDelay={0}
+      placement="top"
+      title={value}
+    >
+      {children}
+    </Tooltip>
+  );
+}
+
+ValueLabelComponent.propTypes = {
+  children: PropTypes.element.isRequired,
+  open: PropTypes.bool.isRequired,
+  value: PropTypes.number.isRequired
+};
 
 const SingleGlobeHandler = ({ globeid }) => {
   const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is run before subscription start
@@ -12,6 +46,9 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [lastActionFromServer, setLastActionFromServer] = useState("");
   const [lastActionFromSphere, setLastActionFromSphere] = useState("");
+
+  const [minHistorySlider, setMinHistorySlider] = useState(0);
+  const [maxHistorySlider, setMaxHistorySlider] = useState(100);
 
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
@@ -61,8 +98,16 @@ const SingleGlobeHandler = ({ globeid }) => {
     return null;
   };
 
+  const handleHistoryLimitChange = newLimits => {
+    //set limits
+    const limits = JSON.parse(newLimits);
+    setMinHistorySlider(limits.min);
+    setMaxHistorySlider(limits.max);
+    return null;
+  };
+
   return (
-    <div>
+    <React.Fragment>
       <InsertGlobetotterLog action={lastActionFromSphere} />
       {subscriptionMode ? (
         <SubscribeToGlobeActions
@@ -81,8 +126,16 @@ const SingleGlobeHandler = ({ globeid }) => {
         globeid={globeid}
         lastaction={lastActionFromServer}
         onSphereDrawAction={handleSphereDrawAction}
+        onHistoryLimitChange={handleHistoryLimitChange}
       />
-    </div>
+      <Slider
+        ValueLabelComponent={ValueLabelComponent}
+        aria-label="custom thumb label"
+        defaultValue={maxHistorySlider}
+        min={minHistorySlider}
+        max={maxHistorySlider}
+      />
+    </React.Fragment>
   );
 };
 
