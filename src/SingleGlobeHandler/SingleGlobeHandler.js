@@ -102,8 +102,12 @@ const SingleGlobeHandler = ({ globeid }) => {
   const handleHistoryLimitChange = newLimits => {
     //set limits
     const limits = JSON.parse(newLimits);
-    setMinHistorySlider(limits.min);
-    setMaxHistorySlider(limits.max);
+    setMinHistorySlider(limits.history_min);
+    if (limits.history_max === null) {
+      setMaxHistorySlider(new Date().getTime());
+    } else {
+      setMaxHistorySlider(limits.history_max);
+    }
     return null;
   };
 

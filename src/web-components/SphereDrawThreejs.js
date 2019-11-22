@@ -33,7 +33,7 @@ class SphereDraw extends HTMLElement {
   _current_color = null;
   _use_random_color = true;
 
-  current_history_time = -1; //(attribute and property) -1 means now
+  //current_history_time = -1; //(attribute and property) -1 means now
 
   OperationEnum = Object.freeze({ insert: 1, update: 2, delete: 3 });
 
@@ -74,25 +74,34 @@ class SphereDraw extends HTMLElement {
 
   attributeChangedCallback(name, oldVal, newVal) {
     if (name === "current_history_time") {
-      this.current_history_time = newVal;
+      //this.current_history_time = newVal;
       //Go through every mesh and set visible according to current_history_time
       this.scene.traverse(function(child) {
-        if (this.current_history_time === -1) {
-          //This is now, means only interested in "living" objects, end=null
-          if (child.userData.end === null) {
-            child.visible = true;
-          }
-        } else {
-          //only show objects where current_history_time is between begin and end.
-          if (
-            this.current_history_time > child.userData.begin &&
-            (this.current_history_time < child.userData.end ||
-              child.userData.end === null)
-          ) {
-            child.visible = true;
+        if (
+          child.userData.begin !== undefined &&
+          child.userData.end !== undefined
+        ) {
+          if (newVal === -1) {
+            //This is now, means only interested in "living" objects, end=null
+            if (child.userData.end === null) {
+              child.visible = true;
+            } else {
+              child.visible = false;
+            }
+          } else {
+            //only show objects where current_history_time is between begin and end.
+            if (
+              newVal > child.userData.begin &&
+              (newVal < child.userData.end || child.userData.end === null)
+            ) {
+              child.visible = true;
+            } else {
+              child.visible = false;
+            }
           }
         }
       });
+      this.render();
     }
   }
 
@@ -196,7 +205,7 @@ class SphereDraw extends HTMLElement {
           bubbles: true,
           detail: JSON.stringify({
             history_min: this._min_begin,
-            history_max: this._max_begin
+            history_max: this._max_end
           })
         })
       );

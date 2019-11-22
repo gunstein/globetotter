@@ -35,7 +35,9 @@ const SphereDrawWrapper = ({
 
   React.useMemo(() => {
     const { current } = ref;
-    current.addGeometryActionToSphereSurfaceJSON(lastaction);
+    if (current !== null) {
+      current.current_history_time = timeHistory;
+    }
   }, [timeHistory]);
 
   return <spheredraw-threejs-element ref={ref} globeid={globeid} />;
