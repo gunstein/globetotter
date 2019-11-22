@@ -81,7 +81,8 @@ class SphereDraw extends HTMLElement {
           child.userData.begin !== undefined &&
           child.userData.end !== undefined
         ) {
-          if (newVal === -1) {
+          const intNewVal = parseInt(newVal, 10);
+          if (intNewVal === -1) {
             //This is now, means only interested in "living" objects, end=null
             if (child.userData.end === null) {
               child.visible = true;
@@ -91,8 +92,8 @@ class SphereDraw extends HTMLElement {
           } else {
             //only show objects where current_history_time is between begin and end.
             if (
-              newVal > child.userData.begin &&
-              (newVal < child.userData.end || child.userData.end === null)
+              intNewVal > child.userData.begin &&
+              (intNewVal < child.userData.end || child.userData.end === null)
             ) {
               child.visible = true;
             } else {

@@ -25,7 +25,7 @@ function ValueLabelComponent(props) {
       open={open}
       enterTouchDelay={0}
       placement="top"
-      title={value}
+      title={new Date(value).toISOString()}
     >
       {children}
     </Tooltip>
@@ -49,7 +49,9 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [minHistorySlider, setMinHistorySlider] = useState(0);
   const [maxHistorySlider, setMaxHistorySlider] = useState(100);
-  const [currentHistorySliderValue, setCurrentHistorySliderValue] = useState(0);
+  const [currentHistoryValue, setCurrentHistoryValue] = useState(-1);
+
+  const [sliderValue, setSliderValue] = useState(100);
 
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
@@ -101,18 +103,34 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const handleHistoryLimitChange = newLimits => {
     //set limits
+    const sliderOnMax = sliderValue && maxHistorySlider;
     const limits = JSON.parse(newLimits);
     setMinHistorySlider(limits.history_min);
+    let newMax = 0;
     if (limits.history_max === null) {
-      setMaxHistorySlider(new Date().getTime());
+      newMax = new Date().getTime();
     } else {
-      setMaxHistorySlider(limits.history_max);
+      newMax = limits.history_max;
+    }
+    setMaxHistorySlider(newMax);
+    if (sliderOnMax) {
+      setSliderValue(newMax);
     }
     return null;
   };
 
+  const handleSliderChange = (event, newValue) => {
+    setSliderValue(newValue);
+  };
+
   const handleSliderChangeCommitted = (event, newValue) => {
-    setCurrentHistorySliderValue(newValue);
+    //setSliderValue(newValue);
+    if (newValue === maxHistorySlider) {
+      setCurrentHistoryValue(-1);
+    } else {
+      setCurrentHistoryValue(newValue);
+    }
+    setSliderValue(newValue);
   };
 
   return (
@@ -134,7 +152,7 @@ const SingleGlobeHandler = ({ globeid }) => {
       <SphereDrawWrapper
         globeid={globeid}
         lastaction={lastActionFromServer}
-        timeHistory={currentHistorySliderValue}
+        timeHistory={currentHistoryValue}
         onSphereDrawAction={handleSphereDrawAction}
         onHistoryLimitChange={handleHistoryLimitChange}
       />
@@ -142,9 +160,11 @@ const SingleGlobeHandler = ({ globeid }) => {
         ValueLabelComponent={ValueLabelComponent}
         aria-label="custom thumb label"
         onChangeCommitted={handleSliderChangeCommitted}
+        onChange={handleSliderChange}
         defaultValue={maxHistorySlider}
         min={minHistorySlider}
         max={maxHistorySlider}
+        value={sliderValue}
       />
     </React.Fragment>
   );
