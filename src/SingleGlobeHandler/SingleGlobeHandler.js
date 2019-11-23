@@ -3,6 +3,40 @@ import SphereDrawWrapper from "../web-components/SphereDrawWrapper";
 import InsertGlobetotterLog from "./InsertGlobetotterLog";
 import SubscribeToGlobeActions from "./SubscribeToGlobeActions";
 import QueryGlobetotterLog from "./QueryGlobetotterLog";
+import Slider from "@material-ui/core/Slider";
+import Tooltip from "@material-ui/core/Tooltip";
+import PropTypes from "prop-types";
+
+function ValueLabelComponent(props) {
+  const { children, open, value } = props;
+
+  const popperRef = React.useRef(null);
+  React.useEffect(() => {
+    if (popperRef.current) {
+      popperRef.current.update();
+    }
+  });
+
+  return (
+    <Tooltip
+      PopperProps={{
+        popperRef
+      }}
+      open={open}
+      enterTouchDelay={0}
+      placement="top"
+      title={new Date(value).toISOString()}
+    >
+      {children}
+    </Tooltip>
+  );
+}
+
+ValueLabelComponent.propTypes = {
+  children: PropTypes.element.isRequired,
+  open: PropTypes.bool.isRequired,
+  value: PropTypes.number.isRequired
+};
 
 const SingleGlobeHandler = ({ globeid }) => {
   const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is run before subscription start
@@ -12,6 +46,12 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [lastActionFromServer, setLastActionFromServer] = useState("");
   const [lastActionFromSphere, setLastActionFromSphere] = useState("");
+
+  const [minHistorySlider, setMinHistorySlider] = useState(0);
+  const [maxHistorySlider, setMaxHistorySlider] = useState(100);
+  const [currentHistoryValue, setCurrentHistoryValue] = useState(-1);
+
+  const [sliderValue, setSliderValue] = useState(100);
 
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
@@ -61,8 +101,40 @@ const SingleGlobeHandler = ({ globeid }) => {
     return null;
   };
 
+  const handleHistoryLimitChange = newLimits => {
+    //set limits
+    const sliderOnMax = sliderValue && maxHistorySlider;
+    const limits = JSON.parse(newLimits);
+    setMinHistorySlider(limits.history_min);
+    let newMax = 0;
+    if (limits.history_max === null) {
+      newMax = new Date().getTime();
+    } else {
+      newMax = limits.history_max;
+    }
+    setMaxHistorySlider(newMax);
+    if (sliderOnMax) {
+      setSliderValue(newMax);
+    }
+    return null;
+  };
+
+  const handleSliderChange = (event, newValue) => {
+    setSliderValue(newValue);
+  };
+
+  const handleSliderChangeCommitted = (event, newValue) => {
+    //setSliderValue(newValue);
+    if (newValue === maxHistorySlider) {
+      setCurrentHistoryValue(-1);
+    } else {
+      setCurrentHistoryValue(newValue);
+    }
+    setSliderValue(newValue);
+  };
+
   return (
-    <div>
+    <React.Fragment>
       <InsertGlobetotterLog action={lastActionFromSphere} />
       {subscriptionMode ? (
         <SubscribeToGlobeActions
@@ -80,9 +152,21 @@ const SingleGlobeHandler = ({ globeid }) => {
       <SphereDrawWrapper
         globeid={globeid}
         lastaction={lastActionFromServer}
+        timeHistory={currentHistoryValue}
         onSphereDrawAction={handleSphereDrawAction}
+        onHistoryLimitChange={handleHistoryLimitChange}
       />
-    </div>
+      <Slider
+        ValueLabelComponent={ValueLabelComponent}
+        aria-label="custom thumb label"
+        onChangeCommitted={handleSliderChangeCommitted}
+        onChange={handleSliderChange}
+        defaultValue={maxHistorySlider}
+        min={minHistorySlider}
+        max={maxHistorySlider}
+        value={sliderValue}
+      />
+    </React.Fragment>
   );
 };
 

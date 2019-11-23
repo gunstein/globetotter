@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { MeshLambertMaterial } from "three";
 
 /* Template */
 var template = document.createElement("template");
@@ -22,8 +23,17 @@ class SphereDraw extends HTMLElement {
     0xf9d423
   ];
   RADIUS = 250;
-  spheres = [];
-  bigsphere = [];
+  _bigsphere = [];
+  _all_transactions = [];
+
+  _geometry = new THREE.BoxBufferGeometry(10, 10, 10);
+  _materialMap = new Map();
+  _min_begin = null;
+  _max_end = null;
+  _current_color = null;
+  _use_random_color = true;
+
+  //current_history_time = -1; //(attribute and property) -1 means now
 
   OperationEnum = Object.freeze({ insert: 1, update: 2, delete: 3 });
 
@@ -52,6 +62,50 @@ class SphereDraw extends HTMLElement {
     this.controls.dispose();
   }
 
+  get current_history_time() {
+    return this.getAttribute("current_history_time");
+  }
+  set current_history_time(value) {
+    this.setAttribute("current_history_time", value);
+  }
+  static get observedAttributes() {
+    return ["current_history_time"];
+  }
+
+  attributeChangedCallback(name, oldVal, newVal) {
+    if (name === "current_history_time") {
+      //this.current_history_time = newVal;
+      //Go through every mesh and set visible according to current_history_time
+      this.scene.traverse(function(child) {
+        if (
+          child.userData.begin !== undefined &&
+          child.userData.end !== undefined
+        ) {
+          const intNewVal = parseInt(newVal, 10);
+          if (intNewVal === -1) {
+            //This is now, means only interested in "living" objects, end=null
+            if (child.userData.end === null) {
+              child.visible = true;
+            } else {
+              child.visible = false;
+            }
+          } else {
+            //only show objects where current_history_time is between begin and end.
+            if (
+              intNewVal > child.userData.begin &&
+              (intNewVal < child.userData.end || child.userData.end === null)
+            ) {
+              child.visible = true;
+            } else {
+              child.visible = false;
+            }
+          }
+        }
+      });
+      this.render();
+    }
+  }
+
   init() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -73,16 +127,17 @@ class SphereDraw extends HTMLElement {
     this.controls.maxDistance = 1000;
     this.controls.update();
 
-    this.geometry = new THREE.SphereGeometry(this.RADIUS, 32, 32);
-    this.material = new THREE.MeshStandardMaterial({
+    const sphere_geometry = new THREE.SphereGeometry(this.RADIUS, 32, 32);
+    const sphere_material = new THREE.MeshStandardMaterial({
       color: 0x333344
     });
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.scene.add(this.mesh);
-    this.geometry.dispose();
-    this.material.dispose();
 
-    this.bigsphere.push(this.mesh);
+    const sphere_mesh = new THREE.Mesh(sphere_geometry, sphere_material);
+    this.scene.add(sphere_mesh);
+    sphere_geometry.dispose();
+    sphere_material.dispose();
+
+    this._bigsphere.push(sphere_mesh);
 
     this.ambientLight = new THREE.AmbientLight(0x404040, 4);
     this.scene.add(this.ambientLight);
@@ -122,45 +177,113 @@ class SphereDraw extends HTMLElement {
   }
 
   addGeometryActionToSphereSurfaceJSON(geomActionJSON) {
-    const geomAction = JSON.parse(geomActionJSON);
+    const org_min_begin = this._min_begin;
+    const org_max_end = this._max_end;
 
+    const geomAction = JSON.parse(geomActionJSON);
     if (Array.isArray(geomAction)) {
       geomAction.forEach(singleaction => {
         singleaction.object_data = JSON.parse(singleaction.object_data);
         //Can have situations where transaction is received before. Check this.
-        if (this.spheres.indexOf(singleaction.transaction_uuid) === -1) {
+        if (
+          this._all_transactions.indexOf(singleaction.transaction_uuid) === -1
+        ) {
           //Try to avoid hanging gui
           this.addGeometryActionToSphereSurface(singleaction);
         }
       });
     } else {
       geomAction.object_data = JSON.parse(geomAction.object_data);
-      if (this.spheres.indexOf(geomAction.transaction_uuid) === -1) {
+      if (this._all_transactions.indexOf(geomAction.transaction_uuid) === -1) {
         this.addGeometryActionToSphereSurface(geomAction);
       }
     }
     this.render();
+
+    if (this._min_begin !== org_min_begin || this._max_end !== org_max_end) {
+      this.dispatchEvent(
+        new CustomEvent("onHistoryLimitChange", {
+          bubbles: true,
+          detail: JSON.stringify({
+            history_min: this._min_begin,
+            history_max: this._max_end
+          })
+        })
+      );
+    }
   }
 
   addGeometryActionToSphereSurface(geomAction) {
-    if (geomAction.operation_id === this.OperationEnum.insert) {
-      const vec3 = new THREE.Vector3(
+    //one material for each color
+    const getMaterial = color => {
+      let material = this._materialMap.get(color);
+      if (material === undefined) {
+        material = new MeshLambertMaterial({ color: color });
+        this._materialMap.set(color, material);
+      }
+      return material;
+    };
+
+    const buildMesh = geomAction => {
+      let mesh = new THREE.Mesh(
+        this._geometry,
+        getMaterial(geomAction.object_data.color)
+      );
+      mesh.userData = { uuid: geomAction.object_uuid, begin: null, end: null };
+      mesh.position.set(
         geomAction.object_data.position.x,
         geomAction.object_data.position.y,
         geomAction.object_data.position.z
       );
-      //let geometry = new THREE.SphereGeometry(10, 20, 20);
-      let geometry = new THREE.BoxGeometry(10, 10, 10);
-      let material = new THREE.MeshStandardMaterial({
-        color: geomAction.object_data.color
-      });
-      let mesh = new THREE.Mesh(geometry, material);
-      mesh.userData = { uuid: geomAction.object_uuid };
-      mesh.position.copy(vec3);
+
+      return mesh;
+    };
+
+    //Add transaction to globe, can be insert, update or delete.
+    //Insert is simplest, insert new object with begin set.
+    //When update and delete: means there allready exist an object with this name.
+    //  Find this object and set end. Update also must create new object.
+    const obj = this.scene.getObjectByName(geomAction.object_uuid);
+    if (!obj) {
+      //Object does not exist? (same as insert)
+      //legg til object med begin=konverter_unixepoch(transaction_timestamp)
+      let mesh = buildMesh(geomAction);
+      mesh.userData.begin = new Date(
+        geomAction.transaction_timestamp
+      ).getTime(); //unix epoch
+      mesh.visible = true;
+
+      if (this._min_begin === null) {
+        this._min_begin = mesh.userData.begin;
+      }
+      this._all_transactions.push(geomAction.transaction_uuid);
       this.scene.add(mesh);
-      geometry.dispose();
-      material.dispose();
-      this.spheres.push(geomAction.transaction_uuid);
+    } else {
+      //this is update or delete
+      //find object with correct name and where end is null.
+      this.scene.traverse(function(child) {
+        if (
+          child.name === geomAction.objct_uuid &&
+          child.userData.end === null
+        ) {
+          const temp_timestamp = new Date(
+            geomAction.transaction_timestamp
+          ).getTime(); //unix epoch
+          if (this._max_end === null || temp_timestamp > this._max_end) {
+            this._max_end = temp_timestamp;
+          }
+          child.userData.end = temp_timestamp;
+          child.visible = false;
+          this._all_transactions.push(geomAction.transaction_uuid);
+          if (geomAction.operation_id === this.OperationEnum.update) {
+            //Add new object if update
+            let mesh = buildMesh(geomAction);
+            mesh.userData.begin = temp_timestamp;
+            mesh.visible = true;
+            this.scene.add(mesh);
+          }
+        }
+      });
     }
   }
 
@@ -176,7 +299,7 @@ class SphereDraw extends HTMLElement {
   handleRaycast(point) {
     this.raycaster.setFromCamera(point, this.camera);
 
-    const intersects = this.raycaster.intersectObjects(this.bigsphere);
+    const intersects = this.raycaster.intersectObjects(this._bigsphere);
     if (intersects.length > 0) {
       const INTERSECTED = intersects[0].object;
       if (INTERSECTED) {
@@ -189,6 +312,7 @@ class SphereDraw extends HTMLElement {
         geomAction.object_uuid = this.uuidv4();
         geomAction.transaction_uuid = this.uuidv4();
         geomAction.globe_id = Number(this.globeid);
+        geomAction.transaction_timestamp = new Date().toISOString();
 
         this.addGeometryActionToSphereSurface(geomAction);
         this.render();

@@ -1,14 +1,29 @@
 import React from "react";
 import "./SphereDrawThreejs";
 
-const SphereDrawWrapper = ({ globeid, lastaction, onSphereDrawAction }) => {
+//https://www.robinwieruch.de/react-web-components
+const SphereDrawWrapper = ({
+  globeid,
+  lastaction,
+  timeHistory,
+  onSphereDrawAction,
+  onHistoryLimitChange
+}) => {
   const ref = React.useRef(null);
   React.useLayoutEffect(() => {
     const handleChange = customEvent => onSphereDrawAction(customEvent.detail);
+    const handleHistoryLimitChange = customEvent =>
+      onHistoryLimitChange(customEvent.detail);
     const { current } = ref;
     current.addEventListener("onSphereDrawAction", handleChange);
-    return () =>
+    current.addEventListener("onHistoryLimitChange", handleHistoryLimitChange);
+    return () => {
       current.removeEventListener("onSphereDrawAction", handleChange);
+      current.removeEventListener(
+        "onHistoryLimitChange",
+        handleHistoryLimitChange
+      );
+    };
   }, [ref]);
 
   React.useMemo(() => {
@@ -17,6 +32,13 @@ const SphereDrawWrapper = ({ globeid, lastaction, onSphereDrawAction }) => {
       current.addGeometryActionToSphereSurfaceJSON(lastaction);
     }
   }, [lastaction]);
+
+  React.useMemo(() => {
+    const { current } = ref;
+    if (current !== null) {
+      current.current_history_time = timeHistory;
+    }
+  }, [timeHistory]);
 
   return <spheredraw-threejs-element ref={ref} globeid={globeid} />;
 };
