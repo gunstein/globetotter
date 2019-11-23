@@ -11,3 +11,5 @@ Collaborative "drawing" on a sphere.
 [Image on Dockerhub](https://hub.docker.com/r/gunstein/globetotter)
 
 ![Screenshot](https://raw.githubusercontent.com/gunstein/globetotter/master/Screenshot.png)
+
+![Concept figure](https://raw.githubusercontent.com/gunstein/globetotter/master/readme_figures/concept.jpg)
