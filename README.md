@@ -12,12 +12,15 @@ Collaborative "drawing" on a sphere.
 
 ![Screenshot](https://raw.githubusercontent.com/gunstein/globetotter/master/Screenshot.png)
 
-Concept
+## Concept
+
 ![Concept figure](https://raw.githubusercontent.com/gunstein/globetotter/master/readme_figures/concept.jpg)
 
-Server
+## Server
+
 ![Server figure](https://raw.githubusercontent.com/gunstein/globetotter/master/readme_figures/server.jpg)
 
-Client
+## Client
+
 ![Client figure](https://raw.githubusercontent.com/gunstein/globetotter/master/readme_figures/client.jpg)
 
