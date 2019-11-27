@@ -4,6 +4,7 @@ import GlobetotterHandler from "./GlobetotterHandler/GlobetotterHandler";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 function App() {
+  //console.log(process.env.REACT_APP_GRAPHQL_URL);
   return (
     <Router>
       <Switch>

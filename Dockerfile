@@ -15,6 +15,10 @@ RUN npm install
 #Copy remaining files
 COPY . .
 
+ARG REACT_APP_GRAPHQL_URL
+
+ENV REACT_APP_GRAPHQL_URL $REACT_APP_GRAPHQL_URL
+
 #Build the project for production
 RUN npm run build 
 
