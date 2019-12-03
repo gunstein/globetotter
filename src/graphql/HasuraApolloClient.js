@@ -10,8 +10,8 @@ const wsLink = new WebSocketLink({
   //uri: "wss://globetotter.herokuapp.com/v1/graphql",
   //uri: "ws://frontend.vatnar.no:8080/v1/graphql",
   //uri: "wss://graphql.slum.tech/v1/graphql",
-  uri: "wss://" + process.env.REACT_APP_GRAPHQL_URL,
-  //uri: "wss://graphql.vatnar.no/v1/graphql",
+  //uri: "wss://" + process.env.REACT_APP_GRAPHQL_URL,
+  uri: "wss://graphql.vatnar.no/v1/graphql",
   options: {
     reconnect: true
   }
@@ -22,8 +22,8 @@ const httpLink = new HttpLink({
   //uri: "https://globetotter.herokuapp.com/v1/graphql"
   //uri: "http://frontend.vatnar.no:8080/v1/graphql"
   //uri: "https://graphql.slum.tech/v1/graphql"
-  uri: "https://" + process.env.REACT_APP_GRAPHQL_URL
-  //uri: "https://graphql.vatnar.no/v1/graphql"
+  //uri: "https://" + process.env.REACT_APP_GRAPHQL_URL
+  uri: "https://graphql.vatnar.no/v1/graphql"
   //credentials: "same-origin"
 });
 
