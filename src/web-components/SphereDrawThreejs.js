@@ -246,7 +246,7 @@ class SphereDraw extends HTMLElement {
     const obj = this.scene.getObjectByName(geomAction.object_uuid);
     if (!obj) {
       //Object does not exist? (same as insert)
-      //legg til object med begin=konverter_unixepoch(transaction_timestamp)
+      //add new visible object and set begin
       let mesh = buildMesh(geomAction);
       mesh.userData.begin = new Date(
         geomAction.transaction_timestamp
@@ -266,6 +266,7 @@ class SphereDraw extends HTMLElement {
           child.name === geomAction.objct_uuid &&
           child.userData.end === null
         ) {
+          //Set end and make invisible for both delete and update, 
           const temp_timestamp = new Date(
             geomAction.transaction_timestamp
           ).getTime(); //unix epoch

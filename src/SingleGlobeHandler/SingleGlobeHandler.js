@@ -6,6 +6,70 @@ import QueryGlobetotterLog from "./QueryGlobetotterLog";
 import Slider from "@material-ui/core/Slider";
 import Tooltip from "@material-ui/core/Tooltip";
 import PropTypes from "prop-types";
+import { makeStyles, useTheme } from "@material-ui/core/styles";
+import CssBaseline from "@material-ui/core/CssBaseline";
+import IconButton from "@material-ui/core/IconButton";
+import MenuIcon from "@material-ui/icons/Menu";
+import clsx from "clsx";
+import Drawer from "@material-ui/core/Drawer";
+
+const drawerWidth = 240;
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: "flex"
+  },
+  appBar: {
+    transition: theme.transitions.create(["margin", "width"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen
+    })
+  },
+  appBarShift: {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: drawerWidth,
+    transition: theme.transitions.create(["margin", "width"], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen
+    })
+  },
+  menuButton: {
+    marginRight: theme.spacing(2)
+  },
+  hide: {
+    display: "none"
+  },
+  drawer: {
+    width: drawerWidth,
+    flexShrink: 0
+  },
+  drawerPaper: {
+    width: drawerWidth
+  },
+  drawerHeader: {
+    display: "flex",
+    alignItems: "center",
+    padding: theme.spacing(0, 1),
+    ...theme.mixins.toolbar,
+    justifyContent: "flex-end"
+  },
+  content: {
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create("margin", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen
+    }),
+    marginLeft: -drawerWidth
+  },
+  contentShift: {
+    transition: theme.transitions.create("margin", {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen
+    }),
+    marginLeft: 0
+  }
+}));
 
 function ValueLabelComponent(props) {
   const { children, open, value } = props;
@@ -52,6 +116,18 @@ const SingleGlobeHandler = ({ globeid }) => {
   const [currentHistoryValue, setCurrentHistoryValue] = useState(-1);
 
   const [sliderValue, setSliderValue] = useState(100);
+
+  const classes = useStyles();
+  const theme = useTheme();
+  const [open, setOpen] = React.useState(false);
+
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
 
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
@@ -134,7 +210,8 @@ const SingleGlobeHandler = ({ globeid }) => {
   };
 
   return (
-    <React.Fragment>
+    <div className={classes.root}>
+      <CssBaseline />
       <InsertGlobetotterLog action={lastActionFromSphere} />
       {subscriptionMode ? (
         <SubscribeToGlobeActions
@@ -149,6 +226,25 @@ const SingleGlobeHandler = ({ globeid }) => {
           handleGlobeQuery={handleQuery}
         />
       ) : null}
+
+      <IconButton
+        color="inherit"
+        aria-label="open drawer"
+        onClick={handleDrawerOpen}
+        edge="start"
+        className={clsx(classes.menuButton, open && classes.hide)}
+      >
+        <MenuIcon />
+      </IconButton>
+      <Drawer
+        className={classes.drawer}
+        variant="persistent"
+        anchor="left"
+        open={open}
+        classes={{
+          paper: classes.drawerPaper
+        }}
+      />
       <SphereDrawWrapper
         globeid={globeid}
         lastaction={lastActionFromServer}
@@ -166,7 +262,7 @@ const SingleGlobeHandler = ({ globeid }) => {
         max={maxHistorySlider}
         value={sliderValue}
       />
-    </React.Fragment>
+    </div>
   );
 };
 
