@@ -6,6 +6,8 @@ import QueryGlobetotterLog from "./QueryGlobetotterLog";
 import Slider from "@material-ui/core/Slider";
 import Tooltip from "@material-ui/core/Tooltip";
 import PropTypes from "prop-types";
+import DrawingSettingsDialog from "./DrawingSettingsDialog";
+import { makeStyles } from "@material-ui/core/styles";
 
 function ValueLabelComponent(props) {
   const { children, open, value } = props;
@@ -38,7 +40,19 @@ ValueLabelComponent.propTypes = {
   value: PropTypes.number.isRequired
 };
 
+//Todo: begynn å bruke denne for dialogen til meny.
+const useStyles = makeStyles(theme => ({
+  overlay_dialog: {
+    position: "absolute",
+    top: "20px",
+    left: "20px",
+    color: "black",
+    backgroundColor: "red"
+  }
+}));
+
 const SingleGlobeHandler = ({ globeid }) => {
+  const classes = useStyles();
   const [subscriptionMode, setSubscriptonMode] = useState(0); //Ensure query is run before subscription start
 
   const [lastTransactionReceived, setLastTransactionReceived] = useState(0); //set vi handlequery
@@ -124,13 +138,17 @@ const SingleGlobeHandler = ({ globeid }) => {
   };
 
   const handleSliderChangeCommitted = (event, newValue) => {
-    //setSliderValue(newValue);
     if (newValue === maxHistorySlider) {
       setCurrentHistoryValue(-1);
     } else {
       setCurrentHistoryValue(newValue);
     }
     setSliderValue(newValue);
+  };
+
+  const handleDrawingSettings = (operation, color) => {
+    setLastActionFromSphere(action);
+    return null;
   };
 
   return (
@@ -166,6 +184,9 @@ const SingleGlobeHandler = ({ globeid }) => {
         max={maxHistorySlider}
         value={sliderValue}
       />
+      <div style={{ position: "absolute", top: "50px", left: "30px" }}>
+        <DrawingSettingsDialog />
+      </div>
     </React.Fragment>
   );
 };

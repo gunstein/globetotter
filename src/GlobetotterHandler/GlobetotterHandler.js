@@ -151,7 +151,7 @@ export default function GlobetotterHandler() {
       ) : (
         <SetInitModeToFalseAndReturnNull />
       )}
-      <Grid container spacing={3}>
+      <Grid width="100%" height="100%" container spacing={3}>
         <Grid item xs={12} sm={2}>
           <Box width="100%" p={1}>
             <Typography p={2} variant="h6">
