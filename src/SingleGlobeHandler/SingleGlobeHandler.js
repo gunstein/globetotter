@@ -67,6 +67,9 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [sliderValue, setSliderValue] = useState(100);
 
+  const [currentColor, setCurrentColor] = useState("#e91e63");
+  const [currentOperation, setCurrentOperation] = useState(1);
+
   const handleQuery = queryResult => {
     if (subscriptionMode === 0) {
       setSubscriptonMode(1);
@@ -147,7 +150,8 @@ const SingleGlobeHandler = ({ globeid }) => {
   };
 
   const handleDrawingSettings = (operation, color) => {
-    setLastActionFromSphere(action);
+    setCurrentOperation(operation);
+    setCurrentColor(color);
     return null;
   };
 
@@ -171,6 +175,8 @@ const SingleGlobeHandler = ({ globeid }) => {
         globeid={globeid}
         lastaction={lastActionFromServer}
         timeHistory={currentHistoryValue}
+        currentColor={currentColor}
+        currentOperation={currentOperation}
         onSphereDrawAction={handleSphereDrawAction}
         onHistoryLimitChange={handleHistoryLimitChange}
       />
@@ -185,7 +191,7 @@ const SingleGlobeHandler = ({ globeid }) => {
         value={sliderValue}
       />
       <div style={{ position: "absolute", top: "50px", left: "30px" }}>
-        <DrawingSettingsDialog />
+        <DrawingSettingsDialog handleDrawingSettings={handleDrawingSettings} />
       </div>
     </React.Fragment>
   );

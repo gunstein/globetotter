@@ -21,7 +21,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export default function DrawingSettingsDialog() {
+const DrawingSettingsDialog = ({ handleSphereDrawAction }) => {
   const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState("#e91e63");
@@ -96,4 +96,6 @@ export default function DrawingSettingsDialog() {
       </Dialog>
     </div>
   );
-}
+};
+
+export default DrawingSettingsDialog;
