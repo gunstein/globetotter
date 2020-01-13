@@ -234,6 +234,7 @@ class SphereDraw extends HTMLElement {
         this._geometry,
         getMaterial(geomAction.object_data.color)
       );
+      mesh.name = geomAction.object_uuid;
       mesh.userData = { uuid: geomAction.object_uuid, begin: null, end: null };
       mesh.position.set(
         geomAction.object_data.position.x,
@@ -251,6 +252,13 @@ class SphereDraw extends HTMLElement {
     const obj = this.scene.getObjectByName(geomAction.object_uuid);
     if (!obj) {
       //Object does not exist? (same as insert)
+      if (geomAction.operation_id !== 1) {
+        console.error(
+          "wrong operation, should be 1 (insert) is: ",
+          geomAction.operation_id
+        );
+        return;
+      }
       //add new visible object and set begin
       let mesh = buildMesh(geomAction);
       mesh.userData.begin = new Date(
@@ -264,32 +272,51 @@ class SphereDraw extends HTMLElement {
       this._all_transactions.push(geomAction.transaction_uuid);
       this.scene.add(mesh);
     } else {
-      //this is update or delete
+      //this is update or delete, confirm this
+      if (geomAction.operation_id !== 2 && geomAction.operation_id !== 3) {
+        console.error(
+          "wrong operation, should be 2 or 3 (update or delete) is: ",
+          geomAction.operation_id
+        );
+        return;
+      }
+
       //find object with correct name and where end is null.
+      let temp_transactions = []; //cant add directly to this._all_transcations inside traverse.
+      let temp_max_end = this._max_end;
+      let temp_mesh = null;
+      const update_operation = this.OperationEnum.update;
       this.scene.traverse(function(child) {
         if (
-          child.name === geomAction.objct_uuid &&
+          child.name === geomAction.object_uuid &&
           child.userData.end === null
         ) {
           //Set end and make invisible for both delete and update,
           const temp_timestamp = new Date(
             geomAction.transaction_timestamp
           ).getTime(); //unix epoch
-          if (this._max_end === null || temp_timestamp > this._max_end) {
-            this._max_end = temp_timestamp;
+          if (temp_max_end === null || temp_timestamp > temp_max_end) {
+            temp_max_end = temp_timestamp;
           }
           child.userData.end = temp_timestamp;
           child.visible = false;
-          this._all_transactions.push(geomAction.transaction_uuid);
-          if (geomAction.operation_id === this.OperationEnum.update) {
+          temp_transactions.push(geomAction.transaction_uuid);
+          if (geomAction.operation_id === update_operation) {
             //Add new object if update
             let mesh = buildMesh(geomAction);
             mesh.userData.begin = temp_timestamp;
             mesh.visible = true;
-            this.scene.add(mesh);
+            temp_mesh = mesh;
           }
         }
       });
+      this._max_end = temp_max_end;
+      if (temp_transactions.length > 0) {
+        this._all_transactions.push(...temp_transactions);
+      }
+      if (temp_mesh !== null) {
+        this.scene.add(temp_mesh);
+      }
     }
   }
 
@@ -316,7 +343,12 @@ class SphereDraw extends HTMLElement {
 
     this.raycaster.setFromCamera(point, this.camera);
 
-    const current_operation = this.getAttribute("current_operation");
+    const current_operation = parseInt(
+      this.getAttribute("current_operation"),
+      10
+    );
+
+    const current_color = parseInt(this.getAttribute("current_color"), 10);
 
     if (current_operation === this.OperationEnum.insert) {
       const intersects = this.raycaster.intersectObjects(this._bigsphere);
@@ -325,7 +357,7 @@ class SphereDraw extends HTMLElement {
         if (INTERSECTED) {
           let geomAction = { operation_id: current_operation };
           const position = intersects[0].point;
-          const color = this.getAttribute("current_color");
+          const color = current_color;
           geomAction.object_data = { position, color };
           geomAction.object_uuid = this.uuidv4();
           geomAction.transaction_uuid = this.uuidv4();
@@ -341,7 +373,7 @@ class SphereDraw extends HTMLElement {
         if (intersects[0].object.id !== this._bigsphere[0].id) {
           let geomAction = { operation_id: current_operation };
           const position = intersects[0].object.position;
-          const color = this.getAttribute("current_color");
+          const color = current_color;
           geomAction.object_data = { position, color };
           geomAction.object_uuid = intersects[0].object.userData.uuid;
           geomAction.transaction_uuid = this.uuidv4();

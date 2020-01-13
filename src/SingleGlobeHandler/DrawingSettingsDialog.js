@@ -1,11 +1,8 @@
 import React from "react";
 import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
 import Fab from "@material-ui/core/Fab";
 import MenuIcon from "@material-ui/icons/Menu";
 import { CirclePicker } from "react-color";
@@ -21,11 +18,11 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const DrawingSettingsDialog = ({ handleSphereDrawAction }) => {
+const DrawingSettingsDialog = ({ handleDrawingSettings }) => {
   const classes = useStyles();
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState("#e91e63");
-  const [operation, setOperation] = React.useState("insert");
+  const [operation, setOperation] = React.useState("1");
 
   const handleOperationChange = event => {
     setOperation(event.target.value);
@@ -40,6 +37,10 @@ const DrawingSettingsDialog = ({ handleSphereDrawAction }) => {
   };
 
   const handleClose = () => {
+    handleDrawingSettings(
+      parseInt(operation, 10),
+      parseInt(Number(color.replace("#", "0x")), 10)
+    );
     setOpen(false);
   };
 
@@ -66,21 +67,9 @@ const DrawingSettingsDialog = ({ handleSphereDrawAction }) => {
               value={operation}
               onChange={handleOperationChange}
             >
-              <FormControlLabel
-                value="insert"
-                control={<Radio />}
-                label="Insert"
-              />
-              <FormControlLabel
-                value="update"
-                control={<Radio />}
-                label="Update"
-              />
-              <FormControlLabel
-                value="delete"
-                control={<Radio />}
-                label="Delete"
-              />
+              <FormControlLabel value="1" control={<Radio />} label="Insert" />
+              <FormControlLabel value="2" control={<Radio />} label="Update" />
+              <FormControlLabel value="3" control={<Radio />} label="Delete" />
             </RadioGroup>
           </FormControl>
           <CirclePicker

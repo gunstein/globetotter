@@ -67,7 +67,7 @@ const SingleGlobeHandler = ({ globeid }) => {
 
   const [sliderValue, setSliderValue] = useState(100);
 
-  const [currentColor, setCurrentColor] = useState("#e91e63");
+  const [currentColor, setCurrentColor] = useState(15277667);
   const [currentOperation, setCurrentOperation] = useState(1);
 
   const handleQuery = queryResult => {

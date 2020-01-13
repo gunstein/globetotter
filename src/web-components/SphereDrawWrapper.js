@@ -56,7 +56,14 @@ const SphereDrawWrapper = ({
     }
   }, [currentOperation]);
 
-  return <spheredraw-threejs-element ref={ref} globeid={globeid} />;
+  return (
+    <spheredraw-threejs-element
+      ref={ref}
+      globeid={globeid}
+      current_color={currentColor}
+      current_operation={currentOperation}
+    />
+  );
 };
 
 export default SphereDrawWrapper;
