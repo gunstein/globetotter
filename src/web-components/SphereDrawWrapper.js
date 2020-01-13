@@ -6,6 +6,8 @@ const SphereDrawWrapper = ({
   globeid,
   lastaction,
   timeHistory,
+  currentColor,
+  currentOperation,
   onSphereDrawAction,
   onHistoryLimitChange
 }) => {
@@ -40,7 +42,28 @@ const SphereDrawWrapper = ({
     }
   }, [timeHistory]);
 
-  return <spheredraw-threejs-element ref={ref} globeid={globeid} />;
+  React.useMemo(() => {
+    const { current } = ref;
+    if (current !== null) {
+      current.current_color = currentColor;
+    }
+  }, [currentColor]);
+
+  React.useMemo(() => {
+    const { current } = ref;
+    if (current !== null) {
+      current.current_operation = currentOperation;
+    }
+  }, [currentOperation]);
+
+  return (
+    <spheredraw-threejs-element
+      ref={ref}
+      globeid={globeid}
+      current_color={currentColor}
+      current_operation={currentOperation}
+    />
+  );
 };
 
 export default SphereDrawWrapper;

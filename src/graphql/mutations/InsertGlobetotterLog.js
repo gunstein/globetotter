@@ -3,7 +3,7 @@ import { gql } from "apollo-boost";
 const INSERT_GLOBETOTTER_LOG = gql`
   mutation insertGlobetotterLog(
     $globeId: Int!
-    $data: jsonb!
+    $data: jsonb
     $objUuid: uuid!
     $operation: Int!
     $transUuid: uuid!

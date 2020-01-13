@@ -13,15 +13,6 @@ template.innerHTML = `
       `;
 
 class SphereDraw extends HTMLElement {
-  COLORS = [
-    0x69d2e7,
-    0xa7dbd8,
-    0xe0e4cc,
-    0xf38630,
-    0xfa6900,
-    0xff4e50,
-    0xf9d423
-  ];
   RADIUS = 250;
   _bigsphere = [];
   _all_transactions = [];
@@ -30,8 +21,6 @@ class SphereDraw extends HTMLElement {
   _materialMap = new Map();
   _min_begin = null;
   _max_end = null;
-  _current_color = null;
-  _use_random_color = true;
 
   //current_history_time = -1; //(attribute and property) -1 means now
 
@@ -52,8 +41,6 @@ class SphereDraw extends HTMLElement {
 
     this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
     this.canvas.addEventListener("touchend", this.handleTouchEnd.bind(this));
-
-    this.globeid = this.getAttribute("globeid");
   }
 
   disconnectedCallback() {
@@ -62,12 +49,30 @@ class SphereDraw extends HTMLElement {
     this.controls.dispose();
   }
 
+  //current_history_time
   get current_history_time() {
     return this.getAttribute("current_history_time");
   }
   set current_history_time(value) {
     this.setAttribute("current_history_time", value);
   }
+
+  //current_color
+  get current_color() {
+    return this.getAttribute("current_color");
+  }
+  set current_color(value) {
+    this.setAttribute("current_color", value);
+  }
+
+  //current_operation
+  get current_operation() {
+    return this.getAttribute("current_operation");
+  }
+  set current_operation(value) {
+    this.setAttribute("current_operation", value);
+  }
+
   static get observedAttributes() {
     return ["current_history_time"];
   }
@@ -229,6 +234,7 @@ class SphereDraw extends HTMLElement {
         this._geometry,
         getMaterial(geomAction.object_data.color)
       );
+      mesh.name = geomAction.object_uuid;
       mesh.userData = { uuid: geomAction.object_uuid, begin: null, end: null };
       mesh.position.set(
         geomAction.object_data.position.x,
@@ -246,7 +252,14 @@ class SphereDraw extends HTMLElement {
     const obj = this.scene.getObjectByName(geomAction.object_uuid);
     if (!obj) {
       //Object does not exist? (same as insert)
-      //legg til object med begin=konverter_unixepoch(transaction_timestamp)
+      if (geomAction.operation_id !== 1) {
+        console.error(
+          "wrong operation, should be 1 (insert) is: ",
+          geomAction.operation_id
+        );
+        return;
+      }
+      //add new visible object and set begin
       let mesh = buildMesh(geomAction);
       mesh.userData.begin = new Date(
         geomAction.transaction_timestamp
@@ -259,31 +272,51 @@ class SphereDraw extends HTMLElement {
       this._all_transactions.push(geomAction.transaction_uuid);
       this.scene.add(mesh);
     } else {
-      //this is update or delete
+      //this is update or delete, confirm this
+      if (geomAction.operation_id !== 2 && geomAction.operation_id !== 3) {
+        console.error(
+          "wrong operation, should be 2 or 3 (update or delete) is: ",
+          geomAction.operation_id
+        );
+        return;
+      }
+
       //find object with correct name and where end is null.
+      let temp_transactions = []; //cant add directly to this._all_transcations inside traverse.
+      let temp_max_end = this._max_end;
+      let temp_mesh = null;
+      const update_operation = this.OperationEnum.update;
       this.scene.traverse(function(child) {
         if (
-          child.name === geomAction.objct_uuid &&
+          child.name === geomAction.object_uuid &&
           child.userData.end === null
         ) {
+          //Set end and make invisible for both delete and update,
           const temp_timestamp = new Date(
             geomAction.transaction_timestamp
           ).getTime(); //unix epoch
-          if (this._max_end === null || temp_timestamp > this._max_end) {
-            this._max_end = temp_timestamp;
+          if (temp_max_end === null || temp_timestamp > temp_max_end) {
+            temp_max_end = temp_timestamp;
           }
           child.userData.end = temp_timestamp;
           child.visible = false;
-          this._all_transactions.push(geomAction.transaction_uuid);
-          if (geomAction.operation_id === this.OperationEnum.update) {
+          temp_transactions.push(geomAction.transaction_uuid);
+          if (geomAction.operation_id === update_operation) {
             //Add new object if update
             let mesh = buildMesh(geomAction);
             mesh.userData.begin = temp_timestamp;
             mesh.visible = true;
-            this.scene.add(mesh);
+            temp_mesh = mesh;
           }
         }
       });
+      this._max_end = temp_max_end;
+      if (temp_transactions.length > 0) {
+        this._all_transactions.push(...temp_transactions);
+      }
+      if (temp_mesh !== null) {
+        this.scene.add(temp_mesh);
+      }
     }
   }
 
@@ -297,31 +330,70 @@ class SphereDraw extends HTMLElement {
   }
 
   handleRaycast(point) {
+    const executeAction = geomAction => {
+      this.addGeometryActionToSphereSurface(geomAction);
+      this.render();
+      this.dispatchEvent(
+        new CustomEvent("onSphereDrawAction", {
+          bubbles: true,
+          detail: JSON.stringify(geomAction)
+        })
+      );
+    };
+
     this.raycaster.setFromCamera(point, this.camera);
 
-    const intersects = this.raycaster.intersectObjects(this._bigsphere);
-    if (intersects.length > 0) {
-      const INTERSECTED = intersects[0].object;
-      if (INTERSECTED) {
-        let geomAction = { operation_id: this.OperationEnum.insert };
-        const position = intersects[0].point;
-        const color = this.COLORS[
-          Math.floor(Math.random() * this.COLORS.length)
-        ];
-        geomAction.object_data = { position, color };
-        geomAction.object_uuid = this.uuidv4();
-        geomAction.transaction_uuid = this.uuidv4();
-        geomAction.globe_id = Number(this.globeid);
-        geomAction.transaction_timestamp = new Date().toISOString();
+    const current_operation = parseInt(
+      this.getAttribute("current_operation"),
+      10
+    );
 
-        this.addGeometryActionToSphereSurface(geomAction);
-        this.render();
-        this.dispatchEvent(
-          new CustomEvent("onSphereDrawAction", {
-            bubbles: true,
-            detail: JSON.stringify(geomAction)
-          })
-        );
+    const current_color = parseInt(this.getAttribute("current_color"), 10);
+
+    if (current_operation === this.OperationEnum.insert) {
+      const intersects = this.raycaster.intersectObjects(this._bigsphere);
+      if (intersects.length > 0) {
+        const INTERSECTED = intersects[0].object;
+        if (INTERSECTED) {
+          let geomAction = { operation_id: current_operation };
+          const position = intersects[0].point;
+          const color = current_color;
+          geomAction.object_data = { position, color };
+          geomAction.object_uuid = this.uuidv4();
+          geomAction.transaction_uuid = this.uuidv4();
+          geomAction.globe_id = Number(this.getAttribute("globeid"));
+          geomAction.transaction_timestamp = new Date().toISOString();
+          executeAction(geomAction);
+        }
+      }
+    } else if (current_operation === this.OperationEnum.update) {
+      const intersects = this.raycaster.intersectObjects(this.scene.children);
+      if (intersects.length > 0) {
+        //Should not update big sphere
+        if (intersects[0].object.id !== this._bigsphere[0].id) {
+          let geomAction = { operation_id: current_operation };
+          const position = intersects[0].object.position;
+          const color = current_color;
+          geomAction.object_data = { position, color };
+          geomAction.object_uuid = intersects[0].object.userData.uuid;
+          geomAction.transaction_uuid = this.uuidv4();
+          geomAction.globe_id = Number(this.getAttribute("globeid"));
+          geomAction.transaction_timestamp = new Date().toISOString();
+          executeAction(geomAction);
+        }
+      }
+    } else if (current_operation === this.OperationEnum.delete) {
+      const intersects = this.raycaster.intersectObjects(this.scene.children);
+      if (intersects.length > 0) {
+        //Should not delete big sphere
+        if (intersects[0].object.id !== this._bigsphere[0].id) {
+          let geomAction = { operation_id: current_operation };
+          geomAction.object_uuid = intersects[0].object.userData.uuid;
+          geomAction.transaction_uuid = this.uuidv4();
+          geomAction.globe_id = Number(this.getAttribute("globeid"));
+          geomAction.transaction_timestamp = new Date().toISOString();
+          executeAction(geomAction);
+        }
       }
     }
   }
