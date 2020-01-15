@@ -6,7 +6,7 @@ Just for fun!
 
 Collaborative "drawing" on a sphere.
 
-[Test it](https://globetotter.slum.tech)
+[Test it](https://globetotter.vatnar.no)
 
 [Image on Dockerhub](https://hub.docker.com/r/gunstein/globetotter)
 
@@ -23,4 +23,3 @@ Collaborative "drawing" on a sphere.
 ## Client
 
 ![Client figure](https://raw.githubusercontent.com/gunstein/globetotter/master/readme_figures/client.jpg)
-
