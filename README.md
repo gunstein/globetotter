@@ -1,8 +1,8 @@
 # globetotter
 
-UNDER CONSTRUCTION
+Just for fun and to prove a concept! 
 
-Just for fun!
+Lots of improvements possible, but I've stopped developement for now.
 
 Collaborative "drawing" on a sphere.
 
